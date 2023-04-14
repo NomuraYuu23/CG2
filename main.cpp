@@ -1,6 +1,11 @@
 #include <Windows.h>
 #include <cstdint>
 #include <string>
+#include <d3d12.h>
+#include <dxgi1_6.h>
+#include <cassert>
+#pragma coment(lib, "d3d12.lib")
+#pragma coment(lib, "dxgi.lib")
 
 #include "CG2_00.h"
 
@@ -46,6 +51,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//ウィンドウを表示する
 	ShowWindow(hwnd, SW_SHOW);
+
+	//DXGIファクトリーの生成
+	IDXGIFactory7* dxgiFactory = nullptr;
+	//HRESULT7はWindows系のエラーコードであり、
+	//関数が成功したかどうかをSUCCEDEDマクロで判定できる
+	HRESULT hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
+	//初期化の根本敵な部分でエラーが出た場合はプログラムが間違っているか、どうにもできない場合が多いのでassertにしておく
+	assert(SUCCEEDED(hr));
 
 	MSG msg{};
 	//ウィンドウののボタンが押されるまでループ
