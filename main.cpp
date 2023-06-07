@@ -1,4 +1,6 @@
 #include <Windows.h>
+#include <cmath>
+#include <numbers>
 #include <cstdint>
 #include <string>
 #include <d3d12.h>
@@ -704,7 +706,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		IID_PPV_ARGS(&graphicsPipelineState));
 	assert(SUCCEEDED(hr));
 
-
 	ID3D12Resource* vertexResource = CreateBufferResource(device, sizeof(VertexData) * 6);
 
 	//頂点バッファビューを作成する
@@ -715,6 +716,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	vertexBufferView.SizeInBytes = sizeof(VertexData) * 6;
 	//1頂点あたりのサイズ
 	vertexBufferView.StrideInBytes = sizeof(VertexData);
+
+	/*
 
 	//頂点リソースにデータを書き込む
 	VertexData* vertexData = nullptr;
@@ -740,7 +743,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	vertexData[5].position = { 0.5f, -0.5f, -0.5f, 1.0f };
 	vertexData[5].texcoord = { 1.0f, 1.0f };
 
-	//Sprite用の頂点リソースを作る
+	*/
+
+	//Sphere用の頂点リソースを作る
 	ID3D12Resource* vertexResourceSprite = CreateBufferResource(device, sizeof(VertexData) * 6);
 
 	//頂点バッファビューを作成する
@@ -770,6 +775,76 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	vertexDataSprite[4].texcoord = { 1.0f, 0.0f };
 	vertexDataSprite[5].position = { 640.0f, 360.0f, 0.0f, 1.0f };//右下
 	vertexDataSprite[5].texcoord = { 1.0f, 1.0f };
+
+	///
+
+	const uint32_t kSubdivision = 256; //分割数
+	const float kLonEvery = 2.0f * float(std::numbers::pi) / float(kSubdivision);//経度分割1つ分の角度
+	const float kLatEvery = float(std::numbers::pi) / float(kSubdivision);//緯度分割1つ分の角度
+	const float Length = 100.0f;
+	const Vector2 Center = { 640.0f , 360.0f };
+
+	ID3D12Resource* vertexResourceSphere = CreateBufferResource(device, sizeof(VertexData) * kSubdivision * kSubdivision * 6);
+
+	//頂点バッファビューを作成する
+	D3D12_VERTEX_BUFFER_VIEW vertexBufferViewSphere{};
+	//リソースの先頭のアドレスから使う
+	vertexBufferViewSphere.BufferLocation = vertexResourceSphere->GetGPUVirtualAddress();
+	//使用するリソースのサイズ
+	vertexBufferViewSphere.SizeInBytes = sizeof(VertexData) * kSubdivision * kSubdivision * 6;
+	//1頂点あたりのサイズ
+	vertexBufferViewSphere.StrideInBytes = sizeof(VertexData);
+
+	//頂点リソースにデータを書き込む
+	VertexData* vertexDataSphere = nullptr;
+	//書き込むためのアドレスを取得
+	vertexResourceSphere->Map(0, nullptr, reinterpret_cast<void**>(&vertexDataSphere));
+
+	//緯度の方向に分割 
+	for (uint32_t latIndex = 0; latIndex < kSubdivision; ++latIndex) {
+		float lat = -1.0f * float(std::numbers::pi) / 2.0f + kLatEvery * latIndex;//現在の緯度
+		//経度の方向に分割
+		for (uint32_t lonIndex = 0; lonIndex < kSubdivision; ++lonIndex) {
+			uint32_t start = (latIndex * kSubdivision + lonIndex) * 6;
+			float lon = lonIndex * kLonEvery;//現在の経度
+			//Texcoord
+			float u = 1.0f - float(lonIndex) / float(kSubdivision);
+			float v = float(latIndex) / float(kSubdivision);
+			//頂点データの書き込み
+			vertexDataSphere[start].position.x = cos(lat) * cos(lon) * Length + Center.x;
+			vertexDataSphere[start].position.y = sin(lat) * Length + Center.y;
+			vertexDataSphere[start].position.z = cos(lat) * sin(lon) * Length;
+			vertexDataSphere[start].position.w = 1.0f;
+			vertexDataSphere[start].texcoord = { u , v };
+			vertexDataSphere[start + 1].position.x = cos(lat + kLatEvery) * cos(lon) * Length + Center.x;
+			vertexDataSphere[start + 1].position.y = sin(lat + kLatEvery) * Length + Center.y;
+			vertexDataSphere[start + 1].position.z = cos(lat + kLatEvery) * sin(lon) * Length;
+			vertexDataSphere[start + 1].position.w = 1.0f;
+			vertexDataSphere[start + 1].texcoord = { u , v };
+			vertexDataSphere[start + 2].position.x = cos(lat) * cos(lon + kLonEvery) * Length + Center.x;
+			vertexDataSphere[start + 2].position.y = sin(lat) * Length + Center.y;
+			vertexDataSphere[start + 2].position.z = cos(lat) * sin(lon + kLonEvery) * Length;
+			vertexDataSphere[start + 2].position.w = 1.0f;
+			vertexDataSphere[start + 2].texcoord = { u, v };
+			vertexDataSphere[start + 3].position.x = cos(lat) * cos(lon + kLonEvery) * Length + Center.x;
+			vertexDataSphere[start + 3].position.y = sin(lat) * Length + Center.y;
+			vertexDataSphere[start + 3].position.z = cos(lat) * sin(lon + kLonEvery) * Length;
+			vertexDataSphere[start + 3].position.w = 1.0f;
+			vertexDataSphere[start + 3].texcoord = { u , v  };
+			vertexDataSphere[start + 4].position.x = cos(lat + kLatEvery) * cos(lon) * Length + Center.x;
+			vertexDataSphere[start + 4].position.y = sin(lat + kLatEvery) * Length + Center.y;
+			vertexDataSphere[start + 4].position.z = cos(lat + kLatEvery) * sin(lon) * Length;
+			vertexDataSphere[start + 4].position.w = 1.0f;
+			vertexDataSphere[start + 4].texcoord = { u , v };
+			vertexDataSphere[start + 5].position.x = cos(lat + kLatEvery) * cos(lon + kLonEvery) * Length + Center.x;
+			vertexDataSphere[start + 5].position.y = sin(lat + kLatEvery) * Length + Center.y;
+			vertexDataSphere[start + 5].position.z = cos(lat + kLatEvery) * sin(lon + kLonEvery) * Length;
+			vertexDataSphere[start + 5].position.w = 1.0f;
+			vertexDataSphere[start + 5].texcoord = { u  , v };
+		}
+	}
+
+	///
 
 	//Sprite用のTransformationMatrix用のリソースを作る。Matrix4x4 1つ分のサイズ
 	ID3D12Resource* transformationMatrixResourceSprite = CreateBufferResource(device, sizeof(Matrix4x4));
@@ -822,7 +897,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//Transform変数を作る
 	TransformStructure transform{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
 	//Transform変数を作る(カメラ)
-	TransformStructure cameraTransform{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -5.0f} };
+	TransformStructure cameraTransform{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -10.0f} };
 
 	//ImGuiの初期化。
 	IMGUI_CHECKVERSION();
@@ -954,6 +1029,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			//描画
 			commandList->DrawInstanced(6, 1, 0, 0);
 
+			//Sphereの描画。変更が必要なものだけ変更する
+			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSphere);
+			//TransformationMatrixCBufferの場所を設定
+			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
+			//描画
+			commandList->DrawInstanced(kSubdivision * kSubdivision * 6, 1, 0, 0);
+
 			//実際のcommandListのImGuiの描画コマンドを積む
 			ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), commandList);
 
@@ -1053,6 +1135,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//03_00追加分
 	vertexResourceSprite->Release();
 	transformationMatrixResourceSprite->Release();
+
+	//04_00追加分
+	vertexResourceSphere->Release();
 
 	CloseWindow(hwnd);
 
