@@ -808,8 +808,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			uint32_t start = (latIndex * kSubdivision + lonIndex) * 6;
 			float lon = lonIndex * kLonEvery;//現在の経度
 			//Texcoord
-			float u = 1.0f - float(lonIndex) / float(kSubdivision);
-			float v = float(latIndex) / float(kSubdivision);
+			float u = float(lonIndex) / float(kSubdivision);
+			float v = 1.0f - float(latIndex) / float(kSubdivision);
 			//頂点データの書き込み
 			vertexDataSphere[start].position.x = cos(lat) * cos(lon) * Length + Center.x;
 			vertexDataSphere[start].position.y = sin(lat) * Length + Center.y;
@@ -857,6 +857,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	
 	//CPUで動かす用のTransformを作る
 	TransformStructure transformSprite{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+	//CPUで動かす用のTransformを作る
+	TransformStructure transformSphere{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
 
 	//ビューポート
 	D3D12_VIEWPORT viewport{};
@@ -966,6 +968,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(kClientWidth), float(kClientHeight), 0.0f, 100.0f);
 			Matrix4x4 worldViewProjectionMatrixSprite = Multiply(WorldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
 			*transformationMatrixDataSprite = worldViewProjectionMatrixSprite;
+
+			//Sphere用のWorldViewProjectionMatrixを作る
+			Matrix4x4 WorldMatrixSphere = MakeAffineMatrix(transformSphere.scale, transformSphere.rotate, transformSphere.translate);
+			Matrix4x4 viewMatrixSphere = MakeIdentity4x4();
+			Matrix4x4 projectionMatrixSphere = MakeOrthographicMatrix(0.0f, 0.0f, float(kClientWidth), float(kClientHeight), 0.0f, 100.0f);
+			Matrix4x4 worldViewProjectionMatrixSphere = Multiply(WorldMatrixSphere, Multiply(viewMatrixSphere, projectionMatrixSphere));
+			*transformationMatrixDataSprite = worldViewProjectionMatrixSphere;
 
 			//ImGuiの内部コマンドを生成する
 			ImGui::Render();
