@@ -42,6 +42,7 @@ struct VertexData{
 
 	Vector4 position;
 	Vector2 texcoord;
+	Vector3 normal;
 
 };
 
@@ -50,6 +51,11 @@ struct TransformStructure {
 	Vector3 scale;
 	Vector3 rotate;
 	Vector3 translate;
+};
+
+struct Material {
+	Vector4 color;
+	int32_t enableLighting;
 };
 
 //ウィンドウプロシージャ
@@ -660,7 +666,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	assert(SUCCEEDED(hr));
 
 	//InputLayout
-	D3D12_INPUT_ELEMENT_DESC inputElementDescs[2] = {};
+	D3D12_INPUT_ELEMENT_DESC inputElementDescs[3] = {};
 	inputElementDescs[0].SemanticName = "POSITION";
 	inputElementDescs[0].SemanticIndex = 0;
 	inputElementDescs[0].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -669,6 +675,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	inputElementDescs[1].SemanticIndex = 0;
 	inputElementDescs[1].Format = DXGI_FORMAT_R32G32_FLOAT;
 	inputElementDescs[1].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
+	inputElementDescs[2].SemanticName = "NORMAL";
+	inputElementDescs[2].SemanticIndex = 0;
+	inputElementDescs[2].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+	inputElementDescs[2].AlignedByteOffset = D3D12_APPEND_ALIGNED_ELEMENT;
 	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc{};
 	inputLayoutDesc.pInputElementDescs = inputElementDescs;
 	inputLayoutDesc.NumElements = _countof(inputElementDescs);
@@ -762,31 +772,49 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			vertexData[start].position.z = cos(lat) * sin(lon);
 			vertexData[start].position.w = 1.0f;
 			vertexData[start].texcoord = { u , v + 1.0f / float(kSubdivision) };
+			vertexData[start].normal.x = vertexData[start].position.x;
+			vertexData[start].normal.y = vertexData[start].position.y;
+			vertexData[start].normal.z = vertexData[start].position.z;
 			vertexData[start + 1].position.x = cos(lat + kLatEvery) * cos(lon);
 			vertexData[start + 1].position.y = sin(lat + kLatEvery);
 			vertexData[start + 1].position.z = cos(lat + kLatEvery) * sin(lon);
 			vertexData[start + 1].position.w = 1.0f;
 			vertexData[start + 1].texcoord = { u , v };
+			vertexData[start + 1].normal.x = vertexData[start + 1].position.x;
+			vertexData[start + 1].normal.y = vertexData[start + 1].position.y;
+			vertexData[start + 1].normal.z = vertexData[start + 1].position.z;
 			vertexData[start + 2].position.x = cos(lat) * cos(lon + kLonEvery);
 			vertexData[start + 2].position.y = sin(lat);
 			vertexData[start + 2].position.z = cos(lat) * sin(lon + kLonEvery);
 			vertexData[start + 2].position.w = 1.0f;
 			vertexData[start + 2].texcoord = { u + 1.0f / float(kSubdivision) , v + 1.0f / float(kSubdivision) };
+			vertexData[start + 2].normal.x = vertexData[start + 2].position.x;
+			vertexData[start + 2].normal.y = vertexData[start + 2].position.y;
+			vertexData[start + 2].normal.z = vertexData[start + 2].position.z;
 			vertexData[start + 3].position.x = cos(lat) * cos(lon + kLonEvery);
 			vertexData[start + 3].position.y = sin(lat);
 			vertexData[start + 3].position.z = cos(lat) * sin(lon + kLonEvery);
 			vertexData[start + 3].position.w = 1.0f;
 			vertexData[start + 3].texcoord = { u + 1.0f / float(kSubdivision) , v + 1.0f / float(kSubdivision) };
+			vertexData[start + 3].normal.x = vertexData[start + 3].position.x;
+			vertexData[start + 3].normal.y = vertexData[start + 3].position.y;
+			vertexData[start + 3].normal.z = vertexData[start + 3].position.z;
 			vertexData[start + 4].position.x = cos(lat + kLatEvery) * cos(lon);
 			vertexData[start + 4].position.y = sin(lat + kLatEvery);
 			vertexData[start + 4].position.z = cos(lat + kLatEvery) * sin(lon);
 			vertexData[start + 4].position.w = 1.0f;
 			vertexData[start + 4].texcoord = { u , v };
+			vertexData[start + 4].normal.x = vertexData[start + 4].position.x;
+			vertexData[start + 4].normal.y = vertexData[start + 4].position.y;
+			vertexData[start + 4].normal.z = vertexData[start + 4].position.z;
 			vertexData[start + 5].position.x = cos(lat + kLatEvery) * cos(lon + kLonEvery);
 			vertexData[start + 5].position.y = sin(lat + kLatEvery);
 			vertexData[start + 5].position.z = cos(lat + kLatEvery) * sin(lon + kLonEvery);
 			vertexData[start + 5].position.w = 1.0f;
 			vertexData[start + 5].texcoord = { u + 1.0f / float(kSubdivision) , v };
+			vertexData[start + 5].normal.x = vertexData[start + 5].position.x;
+			vertexData[start + 5].normal.y = vertexData[start + 5].position.y;
+			vertexData[start + 5].normal.z = vertexData[start + 5].position.z;
 		}
 	}
 
@@ -809,17 +837,23 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//一枚目の三角形
 	vertexDataSprite[0].position = { 0.0f, 360.0f, 0.0f, 1.0f };//左下
 	vertexDataSprite[0].texcoord = { 0.0f, 1.0f };
+	vertexDataSprite[0].normal = { 0.0f, 0.0f, -1.0f };
 	vertexDataSprite[1].position = { 0.0f, 0.0f, 0.0f, 1.0f };//左上
 	vertexDataSprite[1].texcoord = { 0.0f, 0.0f };
+	vertexDataSprite[1].normal = { 0.0f, 0.0f, -1.0f };
 	vertexDataSprite[2].position = { 640.0f, 360.0f, 0.0f, 1.0f };//右下
 	vertexDataSprite[2].texcoord = { 1.0f, 1.0f };
+	vertexDataSprite[2].normal = { 0.0f, 0.0f, -1.0f };
 	//ニ枚目の三角形
 	vertexDataSprite[3].position = { 0.0f, 0.0f, 0.0f, 1.0f };//左上
 	vertexDataSprite[3].texcoord = { 0.0f, 0.0f };
+	vertexDataSprite[3].normal = { 0.0f, 0.0f, -1.0f };
 	vertexDataSprite[4].position = { 640.0f, 0.0f, 0.0f, 1.0f };//右上
 	vertexDataSprite[4].texcoord = { 1.0f, 0.0f };
+	vertexDataSprite[4].normal = { 0.0f, 0.0f, -1.0f };
 	vertexDataSprite[5].position = { 640.0f, 360.0f, 0.0f, 1.0f };//右下
 	vertexDataSprite[5].texcoord = { 1.0f, 1.0f };
+	vertexDataSprite[5].normal = { 0.0f, 0.0f, -1.0f };
 
 	//Sprite用のTransformationMatrix用のリソースを作る。Matrix4x4 1つ分のサイズ
 	ID3D12Resource* transformationMatrixResourceSprite = CreateBufferResource(device, sizeof(Matrix4x4));
@@ -854,13 +888,26 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	scissorRect.bottom = kClientHeight;
 
 	//マテリアル用のリソースを作る。今回はcolor1つ分のサイズを用意する
-	ID3D12Resource* materialResource = CreateBufferResource(device, sizeof(Vector4));
+	ID3D12Resource* materialResource = CreateBufferResource(device, sizeof(Material));
 	//マテリアルにデータを書き込む
-	Vector4* materialData = nullptr;
+	Material* materialData = nullptr;
 	//書き込むためのアドレスを取得
 	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
-	//今回は赤を書き込んでみる
-	*materialData = Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+	//白を書き込んでみる
+	materialData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	//Lightingしないのでfalseを設定する
+	materialData->enableLighting = false;
+
+	//Sprite用のマテリアルリソースを作る
+	ID3D12Resource* materialResourceSprite = CreateBufferResource(device, sizeof(Material));
+	//マテリアルにデータを書き込む
+	Material* materialDataSprite = nullptr;
+	//書き込むためのアドレスを取得
+	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialDataSprite));
+	//白を書き込んでみる
+	materialDataSprite->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	//SpriteはLightingしないのでfalseを設定する
+	materialDataSprite->enableLighting = false;
 
 	//WVP用のリソースを作る。Matrix4x4 1つ分のサイズを用意する
 	ID3D12Resource* wvpResource = CreateBufferResource(device, sizeof(Matrix4x4));
@@ -948,7 +995,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui_ImplWin32_NewFrame();
 			ImGui::NewFrame();
 			ImGui::Checkbox("useMonsterBall", &useMonsterBall);
-			ImGui::DragFloat4("materialData", &materialData->x, 0.01f);
 
 			//開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
 			ImGui::ShowDemoWindow();
@@ -1026,8 +1072,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 			//Spriteの描画。変更が必要なものだけ変更する
 			commandList->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);
+			//マテリアルCBufferの場所を設定
+			commandList->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
 			//TransformationMatrixCBufferの場所を設定
 			commandList->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
+			
 			//描画
 			commandList->DrawInstanced(6, 1, 0, 0);
 
@@ -1134,6 +1183,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//04_01追加分
 	textureResource2->Release();
 	intermediateResource2->Release();
+
+	//04_03追加分
+	materialResourceSprite->Release();
 
 	CloseWindow(hwnd);
 
