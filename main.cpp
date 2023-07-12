@@ -26,6 +26,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 
 #include "Vector3.h"
 #include "Matrix4x4.h"
+#include <wrl.h>
 
 struct Vector4 {
 	float x;
