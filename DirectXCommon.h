@@ -11,19 +11,19 @@
 #include "WinApp.h"
 
 /// <summary>
-/// DirectX”Ä—p
+/// DirectXæ±ç”¨
 /// </summary>
 class DirectXCommon
 {
 public:
 	/// <summary>
-	/// ƒVƒ“ƒOƒ‹ƒgƒ“ƒCƒ“ƒXƒ^ƒ“ƒX‚Ìæ“¾
+	/// ã‚·ãƒ³ã‚°ãƒ«ãƒˆãƒ³ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã®å–å¾—
 	/// </summary>
 	/// <returns></returns>
 	static DirectXCommon* GetInstance();
 
 	/// <summary>
-	/// ‰Šú‰»
+	/// åˆæœŸåŒ–
 	/// </summary>
 	/// <param name="winApp">WinApp</param>
 	/// <param name="backBufferWidth"></param>
@@ -33,22 +33,22 @@ public:
 		int32_t backBufferHeight = WinApp::kWindowHeight);
 
 	/// <summary>
-	/// •`‰æ‘Oˆ—
+	/// æç”»å‰å‡¦ç†
 	/// </summary>
 	void PreDraw();
 
 	/// <summary>
-	/// •`‰æŒãˆ—
+	/// æç”»å¾Œå‡¦ç†
 	/// </summary>
 	void PostDraw();
 
 	/// <summary>
-	/// ƒŒƒ“ƒ_[ƒ^[ƒQƒbƒg‚ÌƒNƒŠƒA
+	/// ãƒ¬ãƒ³ãƒ€ãƒ¼ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã®ã‚¯ãƒªã‚¢
 	/// </summary>
 	void ClearRenderTarget();
 
 	/// <summary>
-	/// [“xƒoƒbƒtƒ@‚ÌƒNƒŠƒA
+	/// æ·±åº¦ãƒãƒƒãƒ•ã‚¡ã®ã‚¯ãƒªã‚¢
 	/// </summary>
 	void ClearDepthBuffer();
 
@@ -64,7 +64,7 @@ private:
 
 	WinApp* winApp_;
 
-	//Direct3DŠÖ˜A
+	//Direct3Dé–¢é€£
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory_;
 	Microsoft::WRL::ComPtr<ID3D12Device> device_;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList_;
@@ -87,19 +87,19 @@ private:
 	const DirectXCommon& operator=(const DirectXCommon&) = delete;
 
 	/// <summary>
-	/// ƒƒO
+	/// ãƒ­ã‚°
 	/// </summary>
 	/// <param name="message"></param>
 	void Log(const std::string& message);
 	
 	/// <summary>
-	/// ƒRƒ“ƒo[ƒgƒXƒgƒŠƒ“ƒO
+	/// ã‚³ãƒ³ãƒãƒ¼ãƒˆã‚¹ãƒˆãƒªãƒ³ã‚°
 	/// </summary>
 	/// <param name="message"></param>
 	std::wstring ConvertString(const std::string& str);
 
 	/// <summary>
-	/// ƒRƒ“ƒo[ƒgƒXƒgƒŠƒ“ƒO
+	/// ã‚³ãƒ³ãƒãƒ¼ãƒˆã‚¹ãƒˆãƒªãƒ³ã‚°
 	/// </summary>
 	/// <param name="message"></param>
 	std::string ConvertString(const std::wstring& str);
@@ -114,32 +114,32 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> CreateDepthStencilTextureResource(Microsoft::WRL::ComPtr<ID3D12Device> device, int32_t width, int32_t height);
 
 	/// <summary>
-	/// DXGIƒfƒoƒCƒX‰Šú‰»
+	/// DXGIãƒ‡ãƒã‚¤ã‚¹åˆæœŸåŒ–
 	/// </summary>
 	void InitializeDXGIDevice();
 
 	/// <summary>
-	/// ƒXƒƒbƒvƒ`ƒF[ƒ“‚Ì¶¬
+	/// ã‚¹ãƒ¯ãƒƒãƒ—ãƒã‚§ãƒ¼ãƒ³ã®ç”Ÿæˆ
 	/// </summary>
 	void CreateSwapChain();
 
 	/// <summary>
-	/// ƒRƒ}ƒ“ƒhŠÖ˜A‰Šú‰»
+	/// ã‚³ãƒãƒ³ãƒ‰é–¢é€£åˆæœŸåŒ–
 	/// </summary>
 	void Initializecommand();
 
 	/// <summary>
-	/// ƒŒƒ“ƒ_[ƒ^[ƒQƒbƒg¶¬
+	/// ãƒ¬ãƒ³ãƒ€ãƒ¼ã‚¿ãƒ¼ã‚²ãƒƒãƒˆç”Ÿæˆ
 	/// </summary>
 	void CreateFinalRenderTarget();
 
 	/// <summary>
-	/// [“xƒoƒbƒtƒ@¶¬
+	/// æ·±åº¦ãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
 	/// </summary>
 	void CreateDepthBuffer();
 
 	/// <summary>
-	/// ƒtƒFƒ“ƒX¶¬
+	/// ãƒ•ã‚§ãƒ³ã‚¹ç”Ÿæˆ
 	/// </summary>
 	void CreateFence();
 
