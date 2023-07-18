@@ -972,7 +972,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		dxCommon->GetCommadList()->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
 
 		//SRVのDescriptorTableの先頭を設定。2はrootParamenter[2]である
-		dxCommon->GetCommadList()->SetGraphicsRootDescriptorTable(2, useMonsterBall ? textureSrvHandleGPU2 : textureSrvHandleGPU);
+		dxCommon->GetCommadList()->SetGraphicsRootDescriptorTable(2,textureSrvHandleGPU);
+
 
 		//描画
 		dxCommon->GetCommadList()->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
