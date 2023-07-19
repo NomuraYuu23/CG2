@@ -954,6 +954,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//描画前処理
 		dxCommon->PreDraw();
 
+		//描画用のDescriptorHeapの設定
+		ID3D12DescriptorHeap* descriptorHeaps[] = { srvDescriptorHeap.Get() };
+		dxCommon->GetCommadList()->SetDescriptorHeaps(1, descriptorHeaps);
+
 		//RootSignatureを設定。
 		dxCommon->GetCommadList()->SetGraphicsRootSignature(rootSignature);
 		dxCommon->GetCommadList()->SetPipelineState(graphicsPipelineState.Get());//PS0を設定
