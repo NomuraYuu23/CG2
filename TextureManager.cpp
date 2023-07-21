@@ -11,6 +11,85 @@ TextureManager* TextureManager::GetInstance() {
 	return &instance;
 }
 
+/// <summary>
+/// システム初期化
+/// </summary>
+/// <param name="device">デバイス</param>
+/// <param name="directoryPath"></param>
+void TextureManager::Initialize(ID3D12Device* device, std::string directoryPath ) {
+
+	assert(device);
+
+	device_ = device;
+	directoryPath_ = directoryPath;
+
+	//ディスクリプタサイズを取得
+	descriptorHandleIncrementSize = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	// 全テクスチャリセット
+	ResetAll();
+
+}
+
+
+/// <summary>
+/// 全テクスチャリセット
+/// </summary>
+void TextureManager::ResetAll() {
+
+	HRESULT result = S_FALSE;
+
+	// ディスクリプタヒープを生成
+	D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc = {};
+	descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+	descHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	descHeapDesc.NumDescriptors = kNumDescriptors;
+	result = device_->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&descriptorHeap_));
+	assert(SUCCEEDED(result));
+
+	indexNextDescriptorHeap = 0;
+
+	//全テクスチャを初期化
+	for (size_t i = 0; i < kNumDescriptors; i++){
+		textures_[i].resource.Reset();
+		textures_[i].cpuDescHandleSRV.ptr = 0;
+		textures_[i].gpuDescHandleSRV.ptr = 0;
+		textures_[i].name.clear();
+	}
+
+}
+
+/// <summary>
+/// リソース情報取得
+/// </summary>
+/// <param name="textureHandle">テクスチャハンドル</param>
+/// <returns>リソース情報</returns>
+const D3D12_RESOURCE_DESC TextureManager::GetResourceDesc(uint32_t textureHandle) {
+
+	assert(textureHandle < textures_.size());
+	Texture& texture = textures_.at(textureHandle);
+	return texture.resource->GetDesc();
+
+}
+
+/// <summary>
+/// ディスクリプタテーブルをセット
+/// </summary>
+/// <param name="commandList">コマンドリスト</param>
+/// <param name="rootParamIndex">ルートパラメータ番号</param>
+/// <param name="textureHandle">テクスチャハンドル</param>
+void TextureManager::SetGraphicsRootDescriptorTable(ID3D12GraphicsCommandList* commandList, UINT rootParamIndex, uint32_t textureHandle) {
+
+	assert(textureHandle < textures_.size());
+	ID3D12DescriptorHeap* ppHeaps[] = { descriptorHeap_.Get() };
+	commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+	
+	//シェーダーリソースビューをセット
+	commandList->SetGraphicsRootDescriptorTable(rootParamIndex, textures_[textureHandle].gpuDescHandleSRV);
+
+}
+
+
 //コンバートストリング
 std::wstring TextureManager::ConvertString(const std::string& str) {
 	if (str.empty()) {
@@ -56,7 +135,6 @@ D3D12_GPU_DESCRIPTOR_HANDLE TextureManager::GetGPUDescriptorHandle(ID3D12Descrip
 	return handleGPU;
 
 }
-
 
 //Resource作成関数化
 Microsoft::WRL::ComPtr<ID3D12Resource> TextureManager::CreateBufferResource(const size_t& sizeInBytes) {

@@ -30,6 +30,33 @@ public:
 	/// <returns></returns>
 	static TextureManager* GetInstance();
 
+	/// <summary>
+	/// システム初期化
+	/// </summary>
+	/// <param name="device">デバイス</param>
+	/// <param name="directoryPath"></param>
+	void Initialize(ID3D12Device* device, std::string directoryPath = "Resources/");
+
+	/// <summary>
+	/// 全テクスチャリセット
+	/// </summary>
+	void ResetAll();
+
+	/// <summary>
+	/// リソース情報取得
+	/// </summary>
+	/// <param name="textureHandle">テクスチャハンドル</param>
+	/// <returns>リソース情報</returns>
+	const D3D12_RESOURCE_DESC GetResourceDesc(uint32_t textureHandle);
+
+	/// <summary>
+	/// ディスクリプタテーブルをセット
+	/// </summary>
+	/// <param name="commandList">コマンドリスト</param>
+	/// <param name="rootParamIndex">ルートパラメータ番号</param>
+	/// <param name="textureHandle">テクスチャハンドル</param>
+	void SetGraphicsRootDescriptorTable(ID3D12GraphicsCommandList* commandList, UINT rootParamIndex, uint32_t textureHandle);
+
 private:
 	TextureManager() = default;
 	~TextureManager() = default;
