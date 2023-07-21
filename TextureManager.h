@@ -5,6 +5,9 @@
 #include <string>
 #include <unordered_map>
 #include <wrl.h>
+#include "externals/DirectXTex/DirectXTex.h"
+
+using namespace DirectX;
 
 //テクスチャマネージャー
 class TextureManager
@@ -95,19 +98,19 @@ private:
 	/// <summary>
 	/// テキストデータを読む
 	/// </summary>
-	DirectX::ScratchImage LoadTexture(const std::string& filePath);
+	ScratchImage LoadTexture(const std::string& filePath);
 	
 	/// <summary>
 	/// TextureResourceを作る
 	/// </summary>
 	/// <param name="metadata"></param>
 	/// <returns></returns>
-	Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(const DirectX::TexMetadata& metadata);
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreateTextureResource(const TexMetadata& metadata);
 
 	/// <summary>
 	/// TextureResourceにデータを転送する
 	/// </summary>
-	Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(Microsoft::WRL::ComPtr<ID3D12Resource> texture, const DirectX::ScratchImage& mipImages,
+	Microsoft::WRL::ComPtr<ID3D12Resource> UploadTextureData(Microsoft::WRL::ComPtr<ID3D12Resource> texture, const ScratchImage& mipImages,
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList);
 
 	/// <summary>

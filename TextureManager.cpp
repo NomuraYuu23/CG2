@@ -1,6 +1,7 @@
 #include "TextureManager.h"
-#include "externals/DirectXTex/DirectXTex.h"
 #include <cassert>
+
+using namespace DirectX;
 
 /// <summary>
 /// シングルトンインスタンスの取得
@@ -167,17 +168,17 @@ Microsoft::WRL::ComPtr<ID3D12Resource> TextureManager::CreateBufferResource(cons
 }
 
 //テキストデータを読む
-DirectX::ScratchImage TextureManager::LoadTexture(const std::string& filePath) {
+ScratchImage TextureManager::LoadTexture(const std::string& filePath) {
 
 	//テクスチャファイルを呼んでプログラムで扱えるようにする
-	DirectX::ScratchImage image{};
+	ScratchImage image{};
 	std::wstring filePathW = ConvertString(filePath);
-	HRESULT hr = DirectX::LoadFromWICFile(filePathW.c_str(), DirectX::WIC_FLAGS_FORCE_SRGB, nullptr, image);
+	HRESULT hr = LoadFromWICFile(filePathW.c_str(), WIC_FLAGS_FORCE_SRGB, nullptr, image);
 	assert(SUCCEEDED(hr));
 
 	//ミップマップの作成
-	DirectX::ScratchImage mipImages{};
-	hr = DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DirectX::TEX_FILTER_SRGB, 0, mipImages);
+	ScratchImage mipImages{};
+	hr = GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), TEX_FILTER_SRGB, 0, mipImages);
 	assert(SUCCEEDED(hr));
 
 	//ミップマップ付きのデータを返す
@@ -186,7 +187,7 @@ DirectX::ScratchImage TextureManager::LoadTexture(const std::string& filePath) {
 }
 
 //TextureResourceを作る
-Microsoft::WRL::ComPtr<ID3D12Resource> TextureManager::CreateTextureResource(const DirectX::TexMetadata& metadata) {
+Microsoft::WRL::ComPtr<ID3D12Resource> TextureManager::CreateTextureResource(const TexMetadata& metadata) {
 
 	//1. metadataを基にResourceの設定
 	D3D12_RESOURCE_DESC resourceDesc{};
@@ -218,11 +219,11 @@ Microsoft::WRL::ComPtr<ID3D12Resource> TextureManager::CreateTextureResource(con
 
 //TextureResourceにデータを転送する
 [[nodiscard]]
-Microsoft::WRL::ComPtr<ID3D12Resource> TextureManager::UploadTextureData(Microsoft::WRL::ComPtr<ID3D12Resource> texture, const DirectX::ScratchImage& mipImages,
+Microsoft::WRL::ComPtr<ID3D12Resource> TextureManager::UploadTextureData(Microsoft::WRL::ComPtr<ID3D12Resource> texture, const ScratchImage& mipImages,
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList) {
 
 	std::vector<D3D12_SUBRESOURCE_DATA> subresources;
-	DirectX::PrepareUpload(device_, mipImages.GetImages(), mipImages.GetImageCount(), mipImages.GetMetadata(), subresources);
+	PrepareUpload(device_, mipImages.GetImages(), mipImages.GetImageCount(), mipImages.GetMetadata(), subresources);
 	uint64_t intermediateSize = GetRequiredIntermediateSize(texture.Get(), 0, UINT(subresources.size()));
 	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = CreateBufferResource(intermediateSize);
 	UpdateSubresources(commandList.Get(), texture.Get(), intermediateResource.Get(), 0, 0, UINT(subresources.size()), subresources.data());
@@ -254,8 +255,8 @@ uint32_t TextureManager::LoadInternal(const std::string& fileName, Microsoft::WR
 	texture.name = fileName;
 
 	//textureを読んで転送する
-	DirectX::ScratchImage mipImages = LoadTexture(fileName);
-	const DirectX::TexMetadata& metadata = mipImages.GetMetadata();
+	ScratchImage mipImages = LoadTexture(fileName);
+	const TexMetadata& metadata = mipImages.GetMetadata();
 	texture.resource = CreateTextureResource(metadata);
 	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = UploadTextureData(texture.resource, mipImages, commandList.Get());
 
@@ -275,6 +276,9 @@ uint32_t TextureManager::LoadInternal(const std::string& fileName, Microsoft::WR
 	//SRVの生成
 	device_->CreateShaderResourceView(texture.resource.Get(), &srvDesc, texture.cpuDescHandleSRV);
 
+	indexNextDescriptorHeap++;
+
+	return handle;
 
 }
 

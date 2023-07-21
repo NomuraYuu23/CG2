@@ -31,6 +31,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 //クラス化
 #include "WinApp.h"
 #include "DirectXCommon.h"
+#include "TextureManager.h"
 
 struct Vector4 {
 	float x;
