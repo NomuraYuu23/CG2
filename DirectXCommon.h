@@ -53,9 +53,19 @@ public:
 	void ClearDepthBuffer();
 
 	ID3D12Device* GetDevice() const { return device_.Get(); }
-	Microsoft::WRL::ComPtr<ID3D12Device> GetDevice2() const { return device_; }
+	//Microsoft::WRL::ComPtr<ID3D12Device> GetDevice2() const { return device_; }
 
 	ID3D12GraphicsCommandList* GetCommadList() const { return commandList_.Get(); }
+
+	ID3D12CommandAllocator* GetCommandAllocator() const { return commandAllocator_.Get(); }
+
+	ID3D12CommandQueue* GetCommandQueue() const { return commandQueue_.Get(); }
+
+	ID3D12Fence* GetFence() const { return fence_.Get(); }
+
+	UINT64 GetFenceVal() const { return fenceVal_; }
+
+	void SetFenceVal(UINT64 fenceVal) { fenceVal_ = fenceVal; }
 
 	int32_t GetBackBufferWidth() const { return backBufferWidth_; }
 

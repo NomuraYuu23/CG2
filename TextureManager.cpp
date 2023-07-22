@@ -4,6 +4,15 @@
 using namespace DirectX;
 
 /// <summary>
+/// 読み込み
+/// </summary>
+/// <param name="fileName">ファイル名</param>
+/// <returns>テクスチャハンドル</returns>
+uint32_t TextureManager::Load(const std::string& fileName, DirectXCommon* dxCommon) {
+	return TextureManager::GetInstance()->LoadInternal(fileName, dxCommon);
+}
+
+/// <summary>
 /// シングルトンインスタンスの取得
 /// </summary>
 /// <returns></returns>
@@ -246,7 +255,7 @@ Microsoft::WRL::ComPtr<ID3D12Resource> TextureManager::UploadTextureData(Microso
 /// </summary>
 /// <param name="fileName">ファイル名</param>
 /// <returns></returns>
-uint32_t TextureManager::LoadInternal(const std::string& fileName, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList) {
+uint32_t TextureManager::LoadInternal(const std::string& fileName, DirectXCommon* dxCommon) {
 
 	assert(indexNextDescriptorHeap < kNumDescriptors);
 	uint32_t handle = indexNextDescriptorHeap;
@@ -258,7 +267,40 @@ uint32_t TextureManager::LoadInternal(const std::string& fileName, Microsoft::WR
 	ScratchImage mipImages = LoadTexture(fileName);
 	const TexMetadata& metadata = mipImages.GetMetadata();
 	texture.resource = CreateTextureResource(metadata);
-	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = UploadTextureData(texture.resource, mipImages, commandList.Get());
+	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = UploadTextureData(texture.resource, mipImages, dxCommon->GetCommadList());
+
+	//ここでキック 02_04ex スライド16
+
+	//コマンドリストをクローズ、キック
+	HRESULT hr = dxCommon->GetCommadList()->Close();
+	assert(SUCCEEDED(hr));
+
+	ID3D12CommandList* commandLists[] = { dxCommon->GetCommadList() };
+	dxCommon->GetCommandQueue()->ExecuteCommandLists(1, commandLists);
+
+	//実行待ち
+	//Fenceの値を更新
+	dxCommon->SetFenceVal(dxCommon->GetFenceVal() + 1);
+	//GPUがここまでたどり着いたときに、Fenceの値を指定した値に代入するようにSignalを送る
+	dxCommon->GetCommandQueue()->Signal(dxCommon->GetFence(), dxCommon->GetFenceVal());
+
+	//Fenceの値が指定したSignal値にたどり着いているが確認する
+	//GetCompletedValueの初期値はFence作成時に渡した初期値
+	if (dxCommon->GetFence()->GetCompletedValue() < dxCommon->GetFenceVal()) {
+		//FrenceのSignalを持つためのイベントを作成する
+		HANDLE fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+		assert(fenceEvent != nullptr);
+		//指定したSignalにたどりついていないので、たどりつくまで待つようにイベントを設定する
+		dxCommon->GetFence()->SetEventOnCompletion(dxCommon->GetFenceVal(), fenceEvent);
+		//イベントを待つ
+		WaitForSingleObject(fenceEvent, INFINITE);
+	}
+
+	//実行が完了したので、アロケータとコマンドリストをリセット
+	hr = dxCommon->GetCommandAllocator()->Reset();
+	assert(SUCCEEDED(hr));
+	hr = dxCommon->GetCommadList()->Reset(dxCommon->GetCommandAllocator(), nullptr);
+	assert(SUCCEEDED(hr));
 
 	//metaDataを基にSRVの設定
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc{};

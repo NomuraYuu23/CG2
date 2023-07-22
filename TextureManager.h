@@ -7,6 +7,8 @@
 #include <wrl.h>
 #include "externals/DirectXTex/DirectXTex.h"
 
+#include "DirectXCommon.h"
+
 using namespace DirectX;
 
 //テクスチャマネージャー
@@ -26,6 +28,13 @@ public:
 		//名前
 		std::string name;
 	};
+
+	/// <summary>
+	/// 読み込み
+	/// </summary>
+	/// <param name="fileName">ファイル名</param>
+	/// <returns>テクスチャハンドル</returns>
+	static uint32_t Load(const std::string& fileName, DirectXCommon* dxCommon);
 
 	/// <summary>
 	/// シングルトンインスタンスの取得
@@ -118,7 +127,7 @@ private:
 	/// </summary>
 	/// <param name="fileName">ファイル名</param>
 	/// <returns></returns>
-	uint32_t LoadInternal(const std::string& fileName ,Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList);
+	uint32_t LoadInternal(const std::string& fileName ,DirectXCommon* dxCommon);
 
 };
 

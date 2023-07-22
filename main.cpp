@@ -500,8 +500,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	win = WinApp::GetInstance();
 	win->CreateGameWindow();
 
+	//DirectX初期化
 	dxCommon = DirectXCommon::GetInstance();
 	dxCommon->Initialize(win);
+
+	//テクスチャマネージャー
+	TextureManager::GetInstance()->Initialize(dxCommon->GetDevice());
+
+
 
 	D3DResourceLeakChecker leakChecker;
 
@@ -853,6 +859,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		GetGPUDescriptorHandle(srvDescriptorHeap.Get(), desriptorSizeSRV, 0));
 
 	*/
+	
+	/*
 
 	//textureを読んで転送する
 	DirectX::ScratchImage mipImages = LoadTexture("resources/uvChecker.png");
@@ -899,8 +907,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//SRVの生成
 	dxCommon->GetDevice()->CreateShaderResourceView(textureResource2.Get(), &srvDesc2, textureSrvHandleCPU2);
 
+	*/
+
+	uint32_t textureHandle = TextureManager::Load("resources/uvChecker.png", dxCommon);
+
 	//SRVを切り替える
-	bool useMonsterBall = false;
+	//bool useMonsterBall = false;
 
 	//ウィンドウののボタンが押されるまでループ
 	while (true) {
@@ -956,8 +968,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		dxCommon->PreDraw();
 
 		//描画用のDescriptorHeapの設定
-		ID3D12DescriptorHeap* descriptorHeaps[] = { srvDescriptorHeap.Get() };
-		dxCommon->GetCommadList()->SetDescriptorHeaps(1, descriptorHeaps);
+		//ID3D12DescriptorHeap* descriptorHeaps[] = { srvDescriptorHeap.Get() };
+		//dxCommon->GetCommadList()->SetDescriptorHeaps(1, descriptorHeaps);
 
 		//RootSignatureを設定。
 		dxCommon->GetCommadList()->SetGraphicsRootSignature(rootSignature);
@@ -975,9 +987,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		//光源
 		dxCommon->GetCommadList()->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
-
+		
 		//SRVのDescriptorTableの先頭を設定。2はrootParamenter[2]である
-		dxCommon->GetCommadList()->SetGraphicsRootDescriptorTable(2,textureSrvHandleGPU);
+		//dxCommon->GetCommadList()->SetGraphicsRootDescriptorTable(2,textureSrvHandleGPU);
+		TextureManager::GetInstance()->SetGraphicsRootDescriptorTable(dxCommon->GetCommadList(), 2, textureHandle);
 
 
 		//描画
