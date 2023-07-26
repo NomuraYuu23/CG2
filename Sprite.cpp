@@ -5,26 +5,26 @@
 using namespace DirectX;
 using namespace Microsoft::WRL;
 
-// ƒfƒoƒCƒX
+// ãƒ‡ãƒã‚¤ã‚¹
 ID3D12Device* Sprite::sDevice = nullptr;
-// ƒfƒBƒXƒNƒŠƒvƒ^ƒTƒCƒY
+// ãƒ‡ã‚£ã‚¹ã‚¯ãƒªãƒ—ã‚¿ã‚µã‚¤ã‚º
 UINT Sprite::sDescriptorHandleIncrementSize;
-// ƒRƒ}ƒ“ƒhƒŠƒXƒg
+// ã‚³ãƒãƒ³ãƒ‰ãƒªã‚¹ãƒˆ
 ID3D12GraphicsCommandList* Sprite::sCommandList = nullptr;
-// ƒ‹[ƒgƒVƒOƒlƒ`ƒƒ
+// ãƒ«ãƒ¼ãƒˆã‚·ã‚°ãƒãƒãƒ£
 ComPtr<ID3D12RootSignature> Sprite::sRootSignature;
-// ƒpƒCƒvƒ‰ƒCƒ“ƒXƒe[ƒgƒIƒuƒWƒFƒNƒg
+// ãƒ‘ã‚¤ãƒ—ãƒ©ã‚¤ãƒ³ã‚¹ãƒ†ãƒ¼ãƒˆã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
 ComPtr<ID3D12PipelineState> Sprite::sPipelineState;
-// Ë‰es—ñ
+// å°„å½±è¡Œåˆ—
 DirectX::XMMATRIX Sprite::sMatProjection;
 
 /// <summary>
-/// Ã“I‰Šú‰»
+/// é™çš„åˆæœŸåŒ–
 /// </summary>
-/// <param name="device">ƒfƒoƒCƒX</param>
-/// <param name="window_width">‰æ–Ê•</param>
-/// <param name="window_height">‰æ–Ê‚‚³</param>
-/// <param name="directoryPath">ƒfƒBƒŒƒNƒgƒŠƒpƒX</param>
+/// <param name="device">ãƒ‡ãƒã‚¤ã‚¹</param>
+/// <param name="window_width">ç”»é¢å¹…</param>
+/// <param name="window_height">ç”»é¢é«˜ã•</param>
+/// <param name="directoryPath">ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªãƒ‘ã‚¹</param>
 void Sprite::StaticInitialize(
 	ID3D12Device* device, int window_width, int window_height,
 	const std::wstring& directoryPath) {
@@ -37,7 +37,7 @@ void Sprite::StaticInitialize(
 
 	HRESULT hr;
 
-	//dxcCompiler‚ğ‰Šú‰»
+	//dxcCompilerã‚’åˆæœŸåŒ–
 	IDxcUtils* dxcUtils = nullptr;
 	IDxcCompiler3* dxcompiler = nullptr;
 	hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils));
@@ -45,41 +45,41 @@ void Sprite::StaticInitialize(
 	hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&dxcompiler));
 	assert(SUCCEEDED(hr));
 
-	//Œ»“_‚Åinclude‚Í‚µ‚È‚¢‚ªAinclude‚É‘Î‰‚·‚é‚½‚ß‚Ìİ’è‚ğs‚Á‚Ä‚¨‚­
+	//ç¾æ™‚ç‚¹ã§includeã¯ã—ãªã„ãŒã€includeã«å¯¾å¿œã™ã‚‹ãŸã‚ã®è¨­å®šã‚’è¡Œã£ã¦ãŠã
 	IDxcIncludeHandler* includeHandler = nullptr;
 	hr = dxcUtils->CreateDefaultIncludeHandler(&includeHandler);
 	assert(SUCCEEDED(hr));
 
 	D3D12_DESCRIPTOR_RANGE descriptorRange[1] = {};
-	descriptorRange[0].BaseShaderRegister = 0;//0‚©‚çn‚Ü‚é
-	descriptorRange[0].NumDescriptors = 1;//”‚Íˆê‚Â
-	descriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;//SRV‚ğg‚¤
-	descriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;//Offset‚ğ©“®ŒvZ
+	descriptorRange[0].BaseShaderRegister = 0;//0ã‹ã‚‰å§‹ã¾ã‚‹
+	descriptorRange[0].NumDescriptors = 1;//æ•°ã¯ä¸€ã¤
+	descriptorRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;//SRVã‚’ä½¿ã†
+	descriptorRange[0].OffsetInDescriptorsFromTableStart = D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;//Offsetã‚’è‡ªå‹•è¨ˆç®—
 
-	//RootSignatureì¬
+	//RootSignatureä½œæˆ
 	D3D12_ROOT_SIGNATURE_DESC descriptionRootsignature{};
 	descriptionRootsignature.Flags =
 		D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
-	//RootParameterì¬B•¡”İ’è‚Å‚«‚é‚Ì‚Å”z—ñB¡‰ñ‚Í1‚Â‚¾‚¯‚È‚Ì‚Å’·‚³1‚Ì”z—ñ
+	//RootParameterä½œæˆã€‚è¤‡æ•°è¨­å®šã§ãã‚‹ã®ã§é…åˆ—ã€‚ä»Šå›ã¯1ã¤ã ã‘ãªã®ã§é•·ã•1ã®é…åˆ—
 	D3D12_ROOT_PARAMETER rootParameters[4] = {};
-	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;   //CBV‚ğg‚¤
-	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;//PixelShader‚Åg‚¤
-	rootParameters[0].Descriptor.ShaderRegister = 0;                   //ƒŒƒWƒXƒ^”Ô†0‚ÆƒoƒCƒ“ƒh
-	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;   //CBV‚ğg‚¤
-	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;//VertexShader‚Åg‚¤
-	rootParameters[1].Descriptor.ShaderRegister = 0;                   //ƒŒƒWƒXƒ^”Ô†0‚ÆƒoƒCƒ“ƒh
-	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;//DescriptorTable‚ğg‚¤
-	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;//PixelShader‚Åg‚¤
-	rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange;//Table‚Ì’†g‚Ì”z—ñ‚ğw’è
-	rootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange);//Table‚Å—˜—p‚·‚é”
-	rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;   //CBV‚ğg‚¤
-	rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;//VertexShader‚Åg‚¤
+	rootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;   //CBVã‚’ä½¿ã†
+	rootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;//PixelShaderã§ä½¿ã†
+	rootParameters[0].Descriptor.ShaderRegister = 0;                   //ãƒ¬ã‚¸ã‚¹ã‚¿ç•ªå·0ã¨ãƒã‚¤ãƒ³ãƒ‰
+	rootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;   //CBVã‚’ä½¿ã†
+	rootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;//VertexShaderã§ä½¿ã†
+	rootParameters[1].Descriptor.ShaderRegister = 0;                   //ãƒ¬ã‚¸ã‚¹ã‚¿ç•ªå·0ã¨ãƒã‚¤ãƒ³ãƒ‰
+	rootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;//DescriptorTableã‚’ä½¿ã†
+	rootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;//PixelShaderã§ä½¿ã†
+	rootParameters[2].DescriptorTable.pDescriptorRanges = descriptorRange;//Tableã®ä¸­èº«ã®é…åˆ—ã‚’æŒ‡å®š
+	rootParameters[2].DescriptorTable.NumDescriptorRanges = _countof(descriptorRange);//Tableã§åˆ©ç”¨ã™ã‚‹æ•°
+	rootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;   //CBVã‚’ä½¿ã†
+	rootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;//VertexShaderã§ä½¿ã†
 	rootParameters[3].Descriptor.ShaderRegister = 1;
-	descriptionRootsignature.pParameters = rootParameters;             //ƒ‹[ƒgƒpƒ‰ƒ[ƒ^”z—ñ‚Ö‚Ìƒ|ƒCƒ“ƒ^
-	descriptionRootsignature.NumParameters = _countof(rootParameters); //”z—ñ‚Ì’·‚³
+	descriptionRootsignature.pParameters = rootParameters;             //ãƒ«ãƒ¼ãƒˆãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿é…åˆ—ã¸ã®ãƒã‚¤ãƒ³ã‚¿
+	descriptionRootsignature.NumParameters = _countof(rootParameters); //é…åˆ—ã®é•·ã•
 
-	//Sampler‚Ìİ’è
+	//Samplerã®è¨­å®š
 	D3D12_STATIC_SAMPLER_DESC staticSamplers[1] = {};
 	staticSamplers[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 	staticSamplers[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -92,16 +92,16 @@ void Sprite::StaticInitialize(
 	descriptionRootsignature.pStaticSamplers = staticSamplers;
 	descriptionRootsignature.NumStaticSamplers = _countof(staticSamplers);
 
-	//DepthStencilState‚Ìİ’è
+	//DepthStencilStateã®è¨­å®š
 	D3D12_DEPTH_STENCIL_DESC depthStencilDesc{};
-	//Depth‚Ì‹@”\‚ğ—LŒø‰»
+	//Depthã®æ©Ÿèƒ½ã‚’æœ‰åŠ¹åŒ–
 	depthStencilDesc.DepthEnable = true;
-	//‘‚«‚İ
+	//æ›¸ãè¾¼ã¿
 	depthStencilDesc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-	//”äŠrŠÖ”‚ÍLessEqual
+	//æ¯”è¼ƒé–¢æ•°ã¯LessEqual
 	depthStencilDesc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
 
-	//ƒVƒŠƒAƒ‰ƒCƒY‚µ‚ÄƒoƒCƒiƒŠ‚É‚·‚é
+	//ã‚·ãƒªã‚¢ãƒ©ã‚¤ã‚ºã—ã¦ãƒã‚¤ãƒŠãƒªã«ã™ã‚‹
 	ID3DBlob* signatureBlob = nullptr;
 	ID3DBlob* errorBlob = nullptr;
 	hr = D3D12SerializeRootSignature(&descriptionRootsignature,
@@ -110,7 +110,7 @@ void Sprite::StaticInitialize(
 		Log(reinterpret_cast<char*>(errorBlob->GetBufferPointer()));
 		assert(false);
 	}
-	//ƒoƒCƒiƒŠ‚ğŒ³‚É¶¬
+	//ãƒã‚¤ãƒŠãƒªã‚’å…ƒã«ç”Ÿæˆ
 	hr = sDevice->CreateRootSignature(0, signatureBlob->GetBufferPointer(),
 		signatureBlob->GetBufferSize(), IID_PPV_ARGS(&sRootSignature));
 	assert(SUCCEEDED(hr));
@@ -133,20 +133,20 @@ void Sprite::StaticInitialize(
 	inputLayoutDesc.pInputElementDescs = inputElementDescs;
 	inputLayoutDesc.NumElements = _countof(inputElementDescs);
 
-	//BlendState‚Ìİ’è
+	//BlendStateã®è¨­å®š
 	D3D12_BLEND_DESC blendDesc{};
-	//‚·‚×‚Ä‚ÌF—v‘f‚ğ‘‚«‚Ş
+	//ã™ã¹ã¦ã®è‰²è¦ç´ ã‚’æ›¸ãè¾¼ã‚€
 	blendDesc.RenderTarget[0].RenderTargetWriteMask =
 		D3D12_COLOR_WRITE_ENABLE_ALL;
 
-	//ResiterzerState‚Ìİ’è
+	//ResiterzerStateã®è¨­å®š
 	D3D12_RASTERIZER_DESC rasterizerDesc{};
-	//— –Ê(Œv‰ñ‚è)‚ğ•\¦‚µ‚È‚¢
+	//è£é¢(æ™‚è¨ˆå›ã‚Š)ã‚’è¡¨ç¤ºã—ãªã„
 	rasterizerDesc.CullMode = D3D12_CULL_MODE_BACK;
-	//OŠpŒ`‚Ì’†‚ğ“h‚è‚Â‚Ô‚·
+	//ä¸‰è§’å½¢ã®ä¸­ã‚’å¡—ã‚Šã¤ã¶ã™
 	rasterizerDesc.FillMode = D3D12_FILL_MODE_SOLID;
 
-	//Shader‚ğƒRƒ“ƒpƒCƒ‹‚·‚é
+	//Shaderã‚’ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã™ã‚‹
 	IDxcBlob* vertexShaderBlob = CompileShader(L"Object3d.VS.hlsl",
 		L"vs_6_0", dxcUtils, dxcompiler, includeHandler);
 	assert(vertexShaderBlob != nullptr);
@@ -156,7 +156,7 @@ void Sprite::StaticInitialize(
 		L"ps_6_0", dxcUtils, dxcompiler, includeHandler);
 	assert(pixelShaderBlob != nullptr);
 
-	//PSO‚ğ¶¬
+	//PSOã‚’ç”Ÿæˆ
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsPipelineStateDesc{};
 	graphicsPipelineStateDesc.pRootSignature = sRootSignature.Get();//RootSignature
 	graphicsPipelineStateDesc.InputLayout = inputLayoutDesc;//InputLayout
@@ -166,26 +166,26 @@ void Sprite::StaticInitialize(
 	pixelShaderBlob->GetBufferSize() };//PixelShader
 	graphicsPipelineStateDesc.BlendState = blendDesc;//BlendState
 	graphicsPipelineStateDesc.RasterizerState = rasterizerDesc;//RasterizerState
-	//‘‚«‚ŞRTV‚Ìî•ñ
+	//æ›¸ãè¾¼ã‚€RTVã®æƒ…å ±
 	graphicsPipelineStateDesc.NumRenderTargets = 1;
 	graphicsPipelineStateDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-	//—˜—p‚·‚éƒgƒ|ƒƒW(Œ`ó)‚Ìƒ^ƒCƒvBOŠpŒ`
+	//åˆ©ç”¨ã™ã‚‹ãƒˆãƒãƒ­ã‚¸(å½¢çŠ¶)ã®ã‚¿ã‚¤ãƒ—ã€‚ä¸‰è§’å½¢
 	graphicsPipelineStateDesc.PrimitiveTopologyType =
 		D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	//‚Ç‚Ì‚æ‚¤‚É‰æ–Ê‚ÉF‚ğ‘Å‚¿‚Ş‚Ì‚©‚Ìİ’è
+	//ã©ã®ã‚ˆã†ã«ç”»é¢ã«è‰²ã‚’æ‰“ã¡è¾¼ã‚€ã®ã‹ã®è¨­å®š
 	graphicsPipelineStateDesc.SampleDesc.Count = 1;
 	graphicsPipelineStateDesc.SampleMask = D3D12_DEFAULT_SAMPLE_MASK;
 
-	//DepthStencil‚Ìİ’è
+	//DepthStencilã®è¨­å®š
 	graphicsPipelineStateDesc.DepthStencilState = depthStencilDesc;
 	graphicsPipelineStateDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
 
-	//ÀÛ‚É¶¬
+	//å®Ÿéš›ã«ç”Ÿæˆ
 	hr = sDevice->CreateGraphicsPipelineState(&graphicsPipelineStateDesc,
 		IID_PPV_ARGS(&sPipelineState));
 	assert(SUCCEEDED(hr));
 
-	// Ë‰es—ñŒvZ
+	// å°„å½±è¡Œåˆ—è¨ˆç®—
 	sMatProjection = XMMatrixOrthographicOffCenterLH(
 		0.0f, (float)window_width, (float)window_height, 0.0f, 0.0f, 1.0f
 	);
@@ -193,61 +193,61 @@ void Sprite::StaticInitialize(
 }
 
 /// <summary>
-/// Ã“I‘Oˆ—
+/// é™çš„å‰å‡¦ç†
 /// </summary>
-/// <param name="cmdList">•`‰æƒRƒ}ƒ“ƒhƒŠƒXƒg</param>
+/// <param name="cmdList">æç”»ã‚³ãƒãƒ³ãƒ‰ãƒªã‚¹ãƒˆ</param>
 void Sprite::PreDraw(ID3D12GraphicsCommandList* cmdList) {
 
 	assert(Sprite::sCommandList == nullptr);
 
 	sCommandList = cmdList;
 
-	//RootSignature‚ğİ’èB
-	sCommandList->SetPipelineState(sPipelineState.Get());//PS0‚ğİ’è
+	//RootSignatureã‚’è¨­å®šã€‚
+	sCommandList->SetPipelineState(sPipelineState.Get());//PS0ã‚’è¨­å®š
 	sCommandList->SetGraphicsRootSignature(sRootSignature.Get());
-	//Œ`ó‚ğİ’èBPS0‚Éİ’è‚µ‚Ä‚¢‚é‚à‚Ì‚Æ‚Í•ÊB
+	//å½¢çŠ¶ã‚’è¨­å®šã€‚PS0ã«è¨­å®šã—ã¦ã„ã‚‹ã‚‚ã®ã¨ã¯åˆ¥ã€‚
 	sCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 }
 
 /// <summary>
-/// •`‰æŒãˆ—
+/// æç”»å¾Œå‡¦ç†
 /// </summary>
 void Sprite::PostDraw() {
-	//ƒRƒ}ƒ“ƒhƒŠƒXƒg‚ğ‰ğœ
+	//ã‚³ãƒãƒ³ãƒ‰ãƒªã‚¹ãƒˆã‚’è§£é™¤
 	Sprite::sCommandList = nullptr;
 
 }
 
 /// <summary>
-/// ƒXƒvƒ‰ƒCƒg¶¬
+/// ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆç”Ÿæˆ
 /// </summary>
-/// <param name="textureHandle">ƒeƒNƒXƒ`ƒƒƒnƒ“ƒhƒ‹</param>
-/// <param name="position">À•W</param>
-/// <param name="color">F</param>
-/// <param name="anchorpoint">ƒAƒ“ƒJ[ƒ|ƒCƒ“ƒg</param>
-/// <param name="isFlipX">¶‰E”½“]</param>
-/// <param name="isFlipY">ã‰º”½“]</param>
-/// <returns>¶¬‚³‚ê‚½ƒXƒvƒ‰ƒCƒg</returns>
+/// <param name="textureHandle">ãƒ†ã‚¯ã‚¹ãƒãƒ£ãƒãƒ³ãƒ‰ãƒ«</param>
+/// <param name="position">åº§æ¨™</param>
+/// <param name="color">è‰²</param>
+/// <param name="anchorpoint">ã‚¢ãƒ³ã‚«ãƒ¼ãƒã‚¤ãƒ³ãƒˆ</param>
+/// <param name="isFlipX">å·¦å³åè»¢</param>
+/// <param name="isFlipY">ä¸Šä¸‹åè»¢</param>
+/// <returns>ç”Ÿæˆã•ã‚ŒãŸã‚¹ãƒ—ãƒ©ã‚¤ãƒˆ</returns>
 Sprite* Sprite::Create(
 	uint32_t textureHandle, DirectX::XMFLOAT2 position, DirectX::XMFLOAT4 color,
 	DirectX::XMFLOAT2 anchorpoint, bool isFlipX, bool isFlipY) {
 
-	// ‰¼ƒTƒCƒY
+	// ä»®ã‚µã‚¤ã‚º
 	XMFLOAT2 size = { 100.0f, 100.0f };
 
-	// ƒeƒNƒXƒ`ƒƒî•ñæ“¾
+	// ãƒ†ã‚¯ã‚¹ãƒãƒ£æƒ…å ±å–å¾—
 	const D3D12_RESOURCE_DESC& resDesc = TextureManager::GetInstance()->GetResourceDesc(textureHandle);
-	// ƒXƒvƒ‰ƒCƒg‚ÌƒTƒCƒY‚ğƒeƒNƒXƒ`ƒƒ‚ÌƒTƒCƒY‚Éİ’è
+	// ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã®ã‚µã‚¤ã‚ºã‚’ãƒ†ã‚¯ã‚¹ãƒãƒ£ã®ã‚µã‚¤ã‚ºã«è¨­å®š
 	size = { (float)resDesc.Width, (float)resDesc.Height };
 
-	// Sprite‚ÌƒCƒ“ƒXƒ^ƒ“ƒX‚ğ¶¬
+	// Spriteã®ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚’ç”Ÿæˆ
 	Sprite* sprite = new Sprite(textureHandle, position, size, color, anchorpoint, isFlipX, isFlipY);
 	if (sprite == nullptr) {
 		return nullptr;
 	}
 
-	// ‰Šú‰»
+	// åˆæœŸåŒ–
 	if (!sprite->Initialize()) {
 		delete sprite;
 		assert(0);
@@ -259,12 +259,12 @@ Sprite* Sprite::Create(
 }
 
 /// <summary>
-/// ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+/// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 /// </summary>
 Sprite::Sprite() {}
 
 /// <summary>
-/// ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+/// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 /// </summary>
 Sprite::Sprite(
 	uint32_t textureHandle, DirectX::XMFLOAT2 position, DirectX::XMFLOAT2 size,
@@ -283,9 +283,9 @@ Sprite::Sprite(
 }
 
 /// <summary>
-/// ‰Šú‰»
+/// åˆæœŸåŒ–
 /// </summary>
-/// <returns>¬”Û</returns>
+/// <returns>æˆå¦</returns>
 bool Sprite::Initialize() {
 
 	assert(sDevice);
@@ -296,71 +296,71 @@ bool Sprite::Initialize() {
 	
 	{
 
-	//’¸“_ƒŠƒ\[ƒX—p‚Ìƒq[ƒv‚Ìİ’è
+	//é ‚ç‚¹ãƒªã‚½ãƒ¼ã‚¹ç”¨ã®ãƒ’ãƒ¼ãƒ—ã®è¨­å®š
 	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
-	uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;//UploadHeap‚ğg‚¤
-	//’¸“_ƒŠƒ\[ƒX‚Ìİ’è
+	uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;//UploadHeapã‚’ä½¿ã†
+	//é ‚ç‚¹ãƒªã‚½ãƒ¼ã‚¹ã®è¨­å®š
 	D3D12_RESOURCE_DESC vertexResourceDesc{};
-	//ƒoƒbƒtƒ@ƒŠƒ\[ƒXBƒeƒNƒXƒ`ƒƒ‚Ìê‡‚Í‚Ü‚½•Ê‚Ìİ’è‚ğ‚·‚é
+	//ãƒãƒƒãƒ•ã‚¡ãƒªã‚½ãƒ¼ã‚¹ã€‚ãƒ†ã‚¯ã‚¹ãƒãƒ£ã®å ´åˆã¯ã¾ãŸåˆ¥ã®è¨­å®šã‚’ã™ã‚‹
 	vertexResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	vertexResourceDesc.Width = sizeof(VertexPosUv) * kVertNum;//ƒŠƒ\[ƒX‚ÌƒTƒCƒYB¡‰ñ‚ÍVector4‚ğ3’¸“_•ª
-	//ƒoƒbƒtƒ@‚Ìê‡‚Í‚±‚ê‚ç‚Í1‚É‚·‚éŒˆ‚Ü‚è
+	vertexResourceDesc.Width = sizeof(VertexPosUv) * kVertNum;//ãƒªã‚½ãƒ¼ã‚¹ã®ã‚µã‚¤ã‚ºã€‚ä»Šå›ã¯Vector4ã‚’3é ‚ç‚¹åˆ†
+	//ãƒãƒƒãƒ•ã‚¡ã®å ´åˆã¯ã“ã‚Œã‚‰ã¯1ã«ã™ã‚‹æ±ºã¾ã‚Š
 	vertexResourceDesc.Height = 1;
 	vertexResourceDesc.DepthOrArraySize = 1;
 	vertexResourceDesc.MipLevels = 1;
 	vertexResourceDesc.SampleDesc.Count = 1;
-	//ƒoƒbƒtƒ@‚Ìê‡‚Í‚±‚ê‚É‚·‚éŒˆ‚Ü‚è
+	//ãƒãƒƒãƒ•ã‚¡ã®å ´åˆã¯ã“ã‚Œã«ã™ã‚‹æ±ºã¾ã‚Š
 	vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-	// ’¸“_ƒoƒbƒtƒ@¶¬
+	// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
 	hr = sDevice->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
 		&vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
 		IID_PPV_ARGS(&vertBuff_));
 	assert(SUCCEEDED(hr));
 
-	// ’¸“_ƒoƒbƒtƒ@ƒ}ƒbƒsƒ“ƒO
+	// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ãƒãƒƒãƒ”ãƒ³ã‚°
 	hr = vertBuff_->Map(0, nullptr, (void**)&vertMap);
 	assert(SUCCEEDED(hr));
 
 	}
 
-	// ’¸“_ƒoƒbƒtƒ@‚Ö‚Ìƒf[ƒ^“]‘—
+	// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã¸ã®ãƒ‡ãƒ¼ã‚¿è»¢é€
 	TransferVertices();
 
-	// ’¸“_ƒoƒbƒtƒ@ƒrƒ…[‚Ìì¬
+	// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ãƒ“ãƒ¥ãƒ¼ã®ä½œæˆ
 	
-	//ƒŠƒ\[ƒX‚Ìæ“ª‚ÌƒAƒhƒŒƒX‚©‚çg‚¤
+	//ãƒªã‚½ãƒ¼ã‚¹ã®å…ˆé ­ã®ã‚¢ãƒ‰ãƒ¬ã‚¹ã‹ã‚‰ä½¿ã†
 	vbView_.BufferLocation = vertBuff_->GetGPUVirtualAddress();
-	//g—p‚·‚éƒŠƒ\[ƒX‚ÌƒTƒCƒY
+	//ä½¿ç”¨ã™ã‚‹ãƒªã‚½ãƒ¼ã‚¹ã®ã‚µã‚¤ã‚º
 	vbView_.SizeInBytes = sizeof(VertexPosUv) * 4;
-	//1’¸“_‚ ‚½‚è‚ÌƒTƒCƒY
+	//1é ‚ç‚¹ã‚ãŸã‚Šã®ã‚µã‚¤ã‚º
 	vbView_.StrideInBytes = sizeof(VertexPosUv);
 
 	{
 
-		//ƒq[ƒv‚Ìİ’è
+		//ãƒ’ãƒ¼ãƒ—ã®è¨­å®š
 		D3D12_HEAP_PROPERTIES uploadHeapProperties{};
-		uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;//UploadHeap‚ğg‚¤
-		//ƒŠƒ\[ƒX‚Ìİ’è
+		uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;//UploadHeapã‚’ä½¿ã†
+		//ãƒªã‚½ãƒ¼ã‚¹ã®è¨­å®š
 		D3D12_RESOURCE_DESC vertexResourceDesc{};
-		//ƒoƒbƒtƒ@ƒŠƒ\[ƒXBƒeƒNƒXƒ`ƒƒ‚Ìê‡‚Í‚Ü‚½•Ê‚Ìİ’è‚ğ‚·‚é
+		//ãƒãƒƒãƒ•ã‚¡ãƒªã‚½ãƒ¼ã‚¹ã€‚ãƒ†ã‚¯ã‚¹ãƒãƒ£ã®å ´åˆã¯ã¾ãŸåˆ¥ã®è¨­å®šã‚’ã™ã‚‹
 		vertexResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 		vertexResourceDesc.Width = (sizeof(ConstBufferData) + 0xff) & ~0xff;
-		//ƒoƒbƒtƒ@‚Ìê‡‚Í‚±‚ê‚ç‚Í1‚É‚·‚éŒˆ‚Ü‚è
+		//ãƒãƒƒãƒ•ã‚¡ã®å ´åˆã¯ã“ã‚Œã‚‰ã¯1ã«ã™ã‚‹æ±ºã¾ã‚Š
 		vertexResourceDesc.Height = 1;
 		vertexResourceDesc.DepthOrArraySize = 1;
 		vertexResourceDesc.MipLevels = 1;
 		vertexResourceDesc.SampleDesc.Count = 1;
-		//ƒoƒbƒtƒ@‚Ìê‡‚Í‚±‚ê‚É‚·‚éŒˆ‚Ü‚è
+		//ãƒãƒƒãƒ•ã‚¡ã®å ´åˆã¯ã“ã‚Œã«ã™ã‚‹æ±ºã¾ã‚Š
 		vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-		// ’è”ƒoƒbƒtƒ@¶¬
+		// å®šæ•°ãƒãƒƒãƒ•ã‚¡ç”Ÿæˆ
 		hr = sDevice->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
 			&vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
 			IID_PPV_ARGS(&constBuff_));
 		assert(SUCCEEDED(hr));
 
-		// ’è”ƒoƒbƒtƒ@ƒ}ƒbƒsƒ“ƒO
+		// å®šæ•°ãƒãƒƒãƒ•ã‚¡ãƒãƒƒãƒ”ãƒ³ã‚°
 		hr = constBuff_->Map(0, nullptr, (void**)&constMap);
 		assert(SUCCEEDED(hr));
 
@@ -371,7 +371,7 @@ bool Sprite::Initialize() {
 }
 
 /// <summary>
-/// ƒeƒNƒXƒ`ƒƒƒnƒ“ƒhƒ‹‚Ìİ’è
+/// ãƒ†ã‚¯ã‚¹ãƒãƒ£ãƒãƒ³ãƒ‰ãƒ«ã®è¨­å®š
 /// </summary>
 /// <param name="textureHandle"></param>
 void Sprite::SetTextureHandle(uint32_t textureHandle) {
@@ -382,9 +382,9 @@ void Sprite::SetTextureHandle(uint32_t textureHandle) {
 }
 
 /// <summary>
-/// À•W‚Ìİ’è
+/// åº§æ¨™ã®è¨­å®š
 /// </summary>
-/// <param name="position">À•W</param>
+/// <param name="position">åº§æ¨™</param>
 void Sprite::SetPosition(const DirectX::XMFLOAT2& position) {
 
 	position_ = position;
@@ -394,9 +394,9 @@ void Sprite::SetPosition(const DirectX::XMFLOAT2& position) {
 }
 
 /// <summary>
-/// Šp“x‚Ìİ’è
+/// è§’åº¦ã®è¨­å®š
 /// </summary>
-/// <param name="rotation">Šp“x</param>
+/// <param name="rotation">è§’åº¦</param>
 void Sprite::SetRotation(float rotation) {
 
 	rotation_ = rotation;
@@ -406,9 +406,9 @@ void Sprite::SetRotation(float rotation) {
 }
 
 /// <summary>
-/// ƒTƒCƒY‚Ìİ’è
+/// ã‚µã‚¤ã‚ºã®è¨­å®š
 /// </summary>
-/// <param name="size">ƒTƒCƒY</param>
+/// <param name="size">ã‚µã‚¤ã‚º</param>
 void Sprite::SetSize(const DirectX::XMFLOAT2& size) {
 
 	size_ = size;
@@ -418,9 +418,9 @@ void Sprite::SetSize(const DirectX::XMFLOAT2& size) {
 }
 
 /// <summary>
-/// ƒAƒ“ƒJ[ƒ|ƒCƒ“ƒg‚Ìİ’è
+/// ã‚¢ãƒ³ã‚«ãƒ¼ãƒã‚¤ãƒ³ãƒˆã®è¨­å®š
 /// </summary>
-/// <param name="anchorpoint">ƒAƒ“ƒJ[ƒ|ƒCƒ“ƒg</param>
+/// <param name="anchorpoint">ã‚¢ãƒ³ã‚«ãƒ¼ãƒã‚¤ãƒ³ãƒˆ</param>
 void Sprite::SetAnchorPoint(const DirectX::XMFLOAT2& anchorpoint) {
 
 	anchorPoint_ = anchorpoint;
@@ -430,9 +430,9 @@ void Sprite::SetAnchorPoint(const DirectX::XMFLOAT2& anchorpoint) {
 }
 
 /// <summary>
-/// ¶‰E”½“]‚Ìİ’è
+/// å·¦å³åè»¢ã®è¨­å®š
 /// </summary>
-/// <param name="isFlipX">¶‰E”½“]</param>
+/// <param name="isFlipX">å·¦å³åè»¢</param>
 void Sprite::SetISFlipX(bool isFlipX) {
 
 	isFlipX_ = isFlipX;
@@ -442,9 +442,9 @@ void Sprite::SetISFlipX(bool isFlipX) {
 }
 
 /// <summary>
-/// ã‰º”½“]‚Ìİ’è
+/// ä¸Šä¸‹åè»¢ã®è¨­å®š
 /// </summary>
-/// <param name="isFlipX">ã‰º”½“]</param>
+/// <param name="isFlipX">ä¸Šä¸‹åè»¢</param>
 void Sprite::SetISFlipY(bool isFlipY) {
 
 	isFlipY_ = isFlipY;
@@ -454,10 +454,10 @@ void Sprite::SetISFlipY(bool isFlipY) {
 }
 
 /// <summary>
-/// ƒeƒNƒXƒ`ƒƒ”ÍˆÍİ’è
+/// ãƒ†ã‚¯ã‚¹ãƒãƒ£ç¯„å›²è¨­å®š
 /// </summary>
-/// <param name="texBase">ƒeƒNƒXƒ`ƒƒ¶ãÀ•W</param>
-/// <param name="texSize">ƒeƒNƒXƒ`ƒƒƒTƒCƒY</param>
+/// <param name="texBase">ãƒ†ã‚¯ã‚¹ãƒãƒ£å·¦ä¸Šåº§æ¨™</param>
+/// <param name="texSize">ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚µã‚¤ã‚º</param>
 void Sprite::SetTextureRect(const DirectX::XMFLOAT2& texBase, const DirectX::XMFLOAT2& texSize) {
 
 	texBase_ = texBase;
@@ -468,37 +468,38 @@ void Sprite::SetTextureRect(const DirectX::XMFLOAT2& texBase, const DirectX::XMF
 }
 
 /// <summary>
-/// •`‰æ
+/// æç”»
 /// </summary>
 void Sprite::Draw() {
 
-	// ƒ[ƒ‹ƒhs—ñ‚ÌXV
+	// ãƒ¯ãƒ¼ãƒ«ãƒ‰è¡Œåˆ—ã®æ›´æ–°
 	matWorld_ = XMMatrixIdentity();
 	matWorld_ *= XMMatrixRotationZ(rotation_);
 	matWorld_ *= XMMatrixTranslation(position_.x, position_.y, 0.0f);
 	
-	// ’è”ƒoƒbƒtƒ@‚Éƒf[ƒ^“]‘—
+	// å®šæ•°ãƒãƒƒãƒ•ã‚¡ã«ãƒ‡ãƒ¼ã‚¿è»¢é€
 	constMap->color = color_;
-	constMap->mat = matWorld_ * sMatProjection; // s—ñ‚Ì‡¬
+	constMap->mat = matWorld_ * sMatProjection; // è¡Œåˆ—ã®åˆæˆ
 
-	// ’¸“_ƒoƒbƒtƒ@‚Ìİ’è
+	// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã®è¨­å®š
 	sCommandList->IASetVertexBuffers(0, 1, &vbView_);
 
-	// ’¸“_ƒoƒbƒtƒ@ƒrƒ…[‚ğƒZƒbƒg
-	sCommandList->SetGraphicsRootConstantBufferView(0, constBuff_->GetGPUVirtualAddress());
-	// ƒVƒF[ƒ_[ƒŠƒ\[ƒXƒrƒ…[‚ğƒZƒbƒg
-	TextureManager::GetInstance()->SetGraphicsRootDescriptorTable(sCommandList, 1, textureHandle_);
-	// •`‰æƒRƒ}ƒ“ƒh
+	// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ãƒ“ãƒ¥ãƒ¼ã‚’ã‚»ãƒƒãƒˆ
+	sCommandList->SetGraphicsRootConstantBufferView(1, constBuff_->GetGPUVirtualAddress());
+
+	// ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ãƒªã‚½ãƒ¼ã‚¹ãƒ“ãƒ¥ãƒ¼ã‚’ã‚»ãƒƒãƒˆ
+	TextureManager::GetInstance()->SetGraphicsRootDescriptorTable(sCommandList, 2, textureHandle_);
+	// æç”»ã‚³ãƒãƒ³ãƒ‰
 	sCommandList->DrawInstanced(4, 1, 0, 0);
 
 }
 
 /// <summary>
-/// ’¸“_ƒf[ƒ^“]‘—
+/// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿è»¢é€
 /// </summary>
 void Sprite::TransferVertices() {
 
-	HRESULT hr;
+	//HRESULT hr;
 
 	enum {LB, LT, RB, RT};
 
@@ -516,7 +517,7 @@ void Sprite::TransferVertices() {
 		bottom = -bottom;
 	}
 
-	// ’¸“_ƒf[ƒ^
+	// é ‚ç‚¹ãƒ‡ãƒ¼ã‚¿
 	VertexPosUv vertices[kVertNum];
 
 	vertices[LB].pos = { left, bottom, 0.0f };
@@ -524,7 +525,7 @@ void Sprite::TransferVertices() {
 	vertices[RB].pos = { right, bottom, 0.0f };
 	vertices[RT].pos = { right, top, 0.0f };
 
-	// ƒeƒNƒXƒ`ƒƒî•ñæ“¾
+	// ãƒ†ã‚¯ã‚¹ãƒãƒ£æƒ…å ±å–å¾—
 	{
 
 		float tex_left = texBase_.x / resourceDesc_.Width;
@@ -539,59 +540,59 @@ void Sprite::TransferVertices() {
 
 	}
 	
-	// ’¸“_ƒoƒbƒtƒ@‚Ö‚Ìƒf[ƒ^“]‘—
+	// é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã¸ã®ãƒ‡ãƒ¼ã‚¿è»¢é€
 	memcpy(vertMap, vertices, sizeof(vertices));
 
 }
 
 //CompileShader
 IDxcBlob* Sprite::CompileShader(
-	//Compiler‚·‚éShanderƒtƒ@ƒCƒ‹‚Ö‚ÌƒpƒX
+	//Compilerã™ã‚‹Shanderãƒ•ã‚¡ã‚¤ãƒ«ã¸ã®ãƒ‘ã‚¹
 	const std::wstring& filePath,
-	//Compilen‚Ég—p‚·‚éProfile
+	//Compilenã«ä½¿ç”¨ã™ã‚‹Profile
 	const wchar_t* profile,
-	//‰Šú‰»‚Å¶¬‚µ‚½‚à‚Ì‚ğ3‚Â
+	//åˆæœŸåŒ–ã§ç”Ÿæˆã—ãŸã‚‚ã®ã‚’3ã¤
 	IDxcUtils* dxcUtils,
 	IDxcCompiler3* dxCompiler,
 	IDxcIncludeHandler* includeHandler)
 {
-	//htslƒtƒ@ƒCƒ‹‚ğ“Ç‚Ş
-	//‚±‚ê‚©‚çƒVƒF[ƒ_[‚ğƒRƒ“ƒpƒCƒ‹‚·‚é|‚ğƒƒO‚Éo‚·
+	//htslãƒ•ã‚¡ã‚¤ãƒ«ã‚’èª­ã‚€
+	//ã“ã‚Œã‹ã‚‰ã‚·ã‚§ãƒ¼ãƒ€ãƒ¼ã‚’ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã™ã‚‹æ—¨ã‚’ãƒ­ã‚°ã«å‡ºã™
 	Log(ConvertString(std::format(L"Begin CompileShader, path:{}, profile:{}\n", filePath, profile)));
-	//hlslƒtƒ@ƒCƒ‹‚ğ“Ç‚Ş
+	//hlslãƒ•ã‚¡ã‚¤ãƒ«ã‚’èª­ã‚€
 	IDxcBlobEncoding* shaderSource = nullptr;
 	HRESULT hr = dxcUtils->LoadFile(filePath.c_str(), nullptr, &shaderSource);
-	//“Ç‚ß‚È‚©‚Á‚½~‚ß‚é
+	//èª­ã‚ãªã‹ã£ãŸæ­¢ã‚ã‚‹
 	assert(SUCCEEDED(hr));
-	//“Ç‚İ‚ñ‚¾ƒtƒ@ƒCƒ‹‚Ì“à—e‚ğİ’è‚·‚é
+	//èª­ã¿è¾¼ã‚“ã ãƒ•ã‚¡ã‚¤ãƒ«ã®å†…å®¹ã‚’è¨­å®šã™ã‚‹
 	DxcBuffer shaderSourceBuffer;
 	shaderSourceBuffer.Ptr = shaderSource->GetBufferPointer();
 	shaderSourceBuffer.Size = shaderSource->GetBufferSize();
-	shaderSourceBuffer.Encoding = DXC_CP_UTF8; //UTF8‚Ì•¶šƒR[ƒh‚Å‚ ‚é‚±‚Æ‚ğ’Ê’m
+	shaderSourceBuffer.Encoding = DXC_CP_UTF8; //UTF8ã®æ–‡å­—ã‚³ãƒ¼ãƒ‰ã§ã‚ã‚‹ã“ã¨ã‚’é€šçŸ¥
 
-	//Compile‚·‚é
+	//Compileã™ã‚‹
 	LPCWSTR arguments[] = {
-		filePath.c_str(), //ƒRƒ“ƒpƒCƒ‹‘ÎÛ‚Ìhlslƒtƒ@ƒCƒ‹–¼
-		L"-E",L"main",//ƒGƒ“ƒgƒŠ[ƒ|ƒCƒ“ƒg‚Ìw’è,Šî–{“I‚ÉmainˆÈŠO‚É‚Í‚µ‚È‚¢
-		L"-T", profile, //ShaderProfile‚Ìİ’è
-		L"-Zi", L"-Qembed_debug", //ƒfƒoƒbƒO—p‚Ìî•ñ‚ğ–„‚ß‚Ş
-		L"-Od", //Å“K‰»‚ğŠO‚µ‚Ä‚¨‚­
-		L"-Zpr", //ƒƒ‚ƒŠƒŒƒCƒAƒEƒg‚Íì¬
+		filePath.c_str(), //ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«å¯¾è±¡ã®hlslãƒ•ã‚¡ã‚¤ãƒ«å
+		L"-E",L"main",//ã‚¨ãƒ³ãƒˆãƒªãƒ¼ãƒã‚¤ãƒ³ãƒˆã®æŒ‡å®š,åŸºæœ¬çš„ã«mainä»¥å¤–ã«ã¯ã—ãªã„
+		L"-T", profile, //ShaderProfileã®è¨­å®š
+		L"-Zi", L"-Qembed_debug", //ãƒ‡ãƒãƒƒã‚°ç”¨ã®æƒ…å ±ã‚’åŸ‹ã‚è¾¼ã‚€
+		L"-Od", //æœ€é©åŒ–ã‚’å¤–ã—ã¦ãŠã
+		L"-Zpr", //ãƒ¡ãƒ¢ãƒªãƒ¬ã‚¤ã‚¢ã‚¦ãƒˆã¯ä½œæˆ
 	};
-	//ÀÛ‚ÉShader‚ğƒRƒ“ƒpƒCƒ‹‚·‚é
+	//å®Ÿéš›ã«Shaderã‚’ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã™ã‚‹
 	IDxcResult* shaderResult = nullptr;
 	hr = dxCompiler->Compile(
-		&shaderSourceBuffer,//“Ç‚İ‚ñ‚¾ƒtƒ@ƒCƒ‹
-		arguments,//ƒRƒ“ƒpƒCƒ‹ƒIƒvƒVƒ‡ƒ“
-		_countof(arguments),//ƒRƒ“ƒpƒCƒ‹ƒIƒvƒVƒ‡ƒ“‚Ì”
-		includeHandler,//include‚ª‚Ó‚­‚Ü‚ê‚½”X
-		IID_PPV_ARGS(&shaderResult)//ƒRƒ“ƒpƒCƒ‹Œ‹‰Ê
+		&shaderSourceBuffer,//èª­ã¿è¾¼ã‚“ã ãƒ•ã‚¡ã‚¤ãƒ«
+		arguments,//ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã‚ªãƒ—ã‚·ãƒ§ãƒ³
+		_countof(arguments),//ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã®æ•°
+		includeHandler,//includeãŒãµãã¾ã‚ŒãŸè«¸ã€…
+		IID_PPV_ARGS(&shaderResult)//ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«çµæœ
 	);
-	//ƒRƒ“ƒpƒCƒ‹ƒGƒ‰[‚Å‚Í‚È‚­dix‚ª‹N“®‚Å‚«‚È‚¢‚È‚Ç’v–½“I‚Èó‹µ
+	//ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«ã‚¨ãƒ©ãƒ¼ã§ã¯ãªãdixãŒèµ·å‹•ã§ããªã„ãªã©è‡´å‘½çš„ãªçŠ¶æ³
 	assert(SUCCEEDED(hr));
 
-	//ŒxEƒGƒ‰[‚ª‚Å‚Ä‚¢‚È‚¢‚©Šm”F‚·‚é
-	//ŒxEƒGƒ‰[‚ªo‚Ä‚½‚çƒƒO‚Éo‚µ‚Ä~‚ß‚é
+	//è­¦å‘Šãƒ»ã‚¨ãƒ©ãƒ¼ãŒã§ã¦ã„ãªã„ã‹ç¢ºèªã™ã‚‹
+	//è­¦å‘Šãƒ»ã‚¨ãƒ©ãƒ¼ãŒå‡ºã¦ãŸã‚‰ãƒ­ã‚°ã«å‡ºã—ã¦æ­¢ã‚ã‚‹
 	IDxcBlobUtf8* shaderError = nullptr;
 	shaderResult->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&shaderError), nullptr);
 	if (shaderError != nullptr && shaderError->GetStringLength() != 0) {
@@ -599,27 +600,27 @@ IDxcBlob* Sprite::CompileShader(
 		assert(false);
 	}
 
-	//compileŒ‹‰Ê‚ğó‚¯æ‚Á‚Ä•Ô‚·
-	//ƒRƒ“ƒpƒCƒ‹Œ‹‰Ê‚©‚çÀs—p‚ÌƒoƒCƒiƒŠ•”•ª‚ğæ“¾
+	//compileçµæœã‚’å—ã‘å–ã£ã¦è¿”ã™
+	//ã‚³ãƒ³ãƒ‘ã‚¤ãƒ«çµæœã‹ã‚‰å®Ÿè¡Œç”¨ã®ãƒã‚¤ãƒŠãƒªéƒ¨åˆ†ã‚’å–å¾—
 	IDxcBlob* shaderBlob = nullptr;
 	hr = shaderResult->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
 	assert(SUCCEEDED(hr));
-	//¬Œ÷‚µ‚½ƒƒO‚ğo‚·
+	//æˆåŠŸã—ãŸãƒ­ã‚°ã‚’å‡ºã™
 	Log(ConvertString(std::format(L"Compile Succeeded, path:{}, profile:{}\n", filePath, profile)));
-	//‚à‚¤g‚í‚È‚¢ƒŠƒ\[ƒX‚ğ‰ğ•ú
+	//ã‚‚ã†ä½¿ã‚ãªã„ãƒªã‚½ãƒ¼ã‚¹ã‚’è§£æ”¾
 	shaderSource->Release();
 	shaderResult->Release();
-	//Às—p‚ÌƒoƒCƒiƒŠ‚ğ•Ô‹p
+	//å®Ÿè¡Œç”¨ã®ãƒã‚¤ãƒŠãƒªã‚’è¿”å´
 	return shaderBlob;
 
 }
 
-//ƒƒO
+//ãƒ­ã‚°
 void Sprite::Log(const std::string& message) {
 	OutputDebugStringA(message.c_str());
 }
 
-//ƒRƒ“ƒo[ƒgƒXƒgƒŠƒ“ƒO
+//ã‚³ãƒ³ãƒãƒ¼ãƒˆã‚¹ãƒˆãƒªãƒ³ã‚°
 std::wstring Sprite::ConvertString(const std::string& str) {
 	if (str.empty()) {
 		return std::wstring();

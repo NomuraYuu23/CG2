@@ -32,6 +32,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "WinApp.h"
 #include "DirectXCommon.h"
 #include "TextureManager.h"
+#include "Sprite.h"
 
 struct Vector4 {
 	float x;
@@ -507,6 +508,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//テクスチャマネージャー
 	TextureManager::GetInstance()->Initialize(dxCommon->GetDevice());
 
+	// スプライト静的初期化
+	Sprite::StaticInitialize(dxCommon->GetDevice(), WinApp::kWindowWidth, WinApp::kWindowHeight);
 
 
 	D3DResourceLeakChecker leakChecker;
@@ -706,6 +709,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	uint32_t* indexData = nullptr;
 	indexResource->Map(0, nullptr, reinterpret_cast<void**>(&indexData));
 
+	
+
 	//Sprite用の頂点リソースを作る
 	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResourceSprite = CreateBufferResource(dxCommon->GetDevice(), sizeof(VertexData) * 6);
 
@@ -780,8 +785,21 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//CPUで動かす用のTransformを作る
 	TransformStructure transformSprite{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+		
+
 	//CPUで動かす用のTransformを作る
 	TransformStructure transformSphere{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+
+	//テクスチャ
+	uint32_t textureHandle = TextureManager::Load("resources/uvChecker.png", dxCommon);
+
+	// スプライト
+	std::unique_ptr<Sprite> sprite;
+
+	sprite.reset(
+		Sprite::Create(
+			textureHandle,DirectX::XMFLOAT2(100.0f,100.0f)));
+
 
 	//平行光源リソースを作る
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource = CreateBufferResource(dxCommon->GetDevice(), sizeof(DirectionalLight));
@@ -857,8 +875,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	*/
 
-	uint32_t textureHandle = TextureManager::Load("resources/uvChecker.png", dxCommon);
-
 	//ウィンドウののボタンが押されるまでループ
 	while (true) {
 		//Windowにメッセージが来てたら最優先で処理させる
@@ -882,8 +898,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		*/
 
+
+
 		//回転
-		transform.rotate.y += 0.03f;
+		//transform.rotate.y = 3.5f;
 		Matrix4x4 worldMatrix = MakeAffineMatrix(transform.scale, transform.rotate, transform.translate);
 		Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
 		Matrix4x4 viewMatrix = Inverse(cameraMatrix);
@@ -892,6 +910,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		wvpData->WVP = worldViewProjectionMatrix;
 		wvpData->World = worldMatrix;
 
+
+
 		//Sprite用のWorldViewProjectionMatrixを作る
 		Matrix4x4 WorldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
 		Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
@@ -899,6 +919,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Matrix4x4 worldViewProjectionMatrixSprite = Multiply(WorldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
 		transformationMatrixDataSprite->WVP = worldViewProjectionMatrixSprite;
 		transformationMatrixDataSprite->World = WorldMatrixSprite;
+
 
 		//UVTransfome用
 		Matrix4x4 uvTransformMatrix = MakeScaleMatrix(uvTransformSprite.scale);
@@ -911,6 +932,26 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		//描画前処理
 		dxCommon->PreDraw();
+
+#pragma region 背景スプライト描画
+		// 背景スプライト描画前処理
+		Sprite::PreDraw(dxCommon->GetCommadList());
+
+
+
+		dxCommon->GetCommadList()->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
+		//背景スプライト描画
+		sprite->Draw();
+
+
+		// スプライト描画後処理
+		Sprite::PostDraw();
+		// 深度バッファクリア
+		dxCommon->ClearDepthBuffer();
+
+
+#pragma endregion
+
 
 		//RootSignatureを設定。
 		dxCommon->GetCommadList()->SetPipelineState(graphicsPipelineState.Get());//PS0を設定
@@ -938,21 +979,36 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		dxCommon->GetCommadList()->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
 		//commandList->DrawIndexedInstanced(UINT(sizeof(VertexData)* modelData.vertices.size()), 1, 0, 0, 0);
 
+		
+
 		//Spriteの描画。変更が必要なものだけ変更する
-		dxCommon->GetCommadList()->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);
+		//dxCommon->GetCommadList()->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);
 		//IBVを設定
-		dxCommon->GetCommadList()->IASetIndexBuffer(&indexBufferViewSprite);
+		//dxCommon->GetCommadList()->IASetIndexBuffer(&indexBufferViewSprite);
 		//マテリアルCBufferの場所を設定
-		dxCommon->GetCommadList()->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
 		//TransformationMatrixCBufferの場所を設定
-		dxCommon->GetCommadList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
+		//dxCommon->GetCommadList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
 
 		//描画
 		//commandList->DrawInstanced(6, 1, 0, 0);
-		dxCommon->GetCommadList()->DrawIndexedInstanced(6, 1, 0, 0, 0);
+		//dxCommon->GetCommadList()->DrawIndexedInstanced(6, 1, 0, 0, 0);
+
+		
 
 		//実際のcommandListのImGuiの描画コマンドを積む
 		//ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->GetCommadList());
+
+#pragma region 前景スプライト描画
+// 背景スプライト描画前処理
+		Sprite::PreDraw(dxCommon->GetCommadList());
+
+		//背景スプライト描画
+		//sprite->Draw();
+
+		// スプライト描画後処理
+		Sprite::PostDraw();
+
+#pragma endregion
 
 		//描画後処理
 		dxCommon->PostDraw();

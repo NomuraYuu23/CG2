@@ -217,6 +217,7 @@ private:
 	// リソース設定
 	D3D12_RESOURCE_DESC resourceDesc_;
 
+
 private:
 	/// <summary>
 	/// 頂点データ転送
