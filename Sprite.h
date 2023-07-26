@@ -9,7 +9,9 @@
 
 #pragma comment(lib, "dxcompiler.lib")
 
+#include "Vector2.h"
 #include "Vector3.h"
+#include "Vector4.h"
 #include "Matrix4x4.h"
 
 /// <summary>
@@ -33,20 +35,6 @@ public:
 	struct ConstBufferData {
 		DirectX::XMFLOAT4 color; // 色(RGBA)
 		DirectX::XMMATRIX mat;   // 3D変換行列
-	};
-
-	struct Vector4 {
-		float x;
-		float y;
-		float z;
-		float w;
-	};
-
-	struct Vector2 {
-
-		float x;
-		float y;
-
 	};
 
 	struct VertexData {
@@ -102,8 +90,7 @@ public:
 	/// <param name="isFlipY">上下反転</param>
 	/// <returns>生成されたスプライト</returns>
 	static Sprite* Create(
-		uint32_t textureHandle, DirectX::XMFLOAT2 position, DirectX::XMFLOAT4 color = { 1,1,1,1 },
-		DirectX::XMFLOAT2 anchorpoint = { 0.0f, 0.0f }, bool isFlipX = false, bool isFlipY = false);
+		uint32_t textureHandle, const Vector3& scale, const Vector3& rotate, const Vector3& position);
 
 private:
 
@@ -131,8 +118,7 @@ public:
 	/// コンストラクタ
 	/// </summary>
 	Sprite(
-		uint32_t textureHandle, DirectX::XMFLOAT2 position, DirectX::XMFLOAT2 size,
-		DirectX::XMFLOAT4 color, DirectX::XMFLOAT2 anchorpoint, bool isFlipX, bool isFlipY);
+		uint32_t textureHandle, const Vector3& scale, const Vector3& rotate, const Vector3& position);
 
 	/// <summary>
 	/// 初期化
@@ -146,70 +132,7 @@ public:
 	/// <param name="textureHandle"></param>
 	void SetTextureHandle(uint32_t textureHandle);
 
-	uint32_t GetTevtureHandle() {return textureHandle_;}
-
-	/// <summary>
-	/// 座標の設定
-	/// </summary>
-	/// <param name="position">座標</param>
-	void SetPosition(const DirectX::XMFLOAT2& position);
-
-	const DirectX::XMFLOAT2& GetPosition() { return position_; }
-
-	/// <summary>
-	/// 角度の設定
-	/// </summary>
-	/// <param name="rotation">角度</param>
-	void SetRotation(float rotation);
-
-	float GetRotation() { return rotation_; }
-
-	/// <summary>
-	/// サイズの設定
-	/// </summary>
-	/// <param name="size">サイズ</param>
-	void SetSize(const DirectX::XMFLOAT2& size);
-
-	const DirectX::XMFLOAT2& GetSize() { return size_; }
-
-	/// <summary>
-	/// アンカーポイントの設定
-	/// </summary>
-	/// <param name="anchorpoint">アンカーポイント</param>
-	void SetAnchorPoint(const DirectX::XMFLOAT2& anchorpoint);
-
-	const DirectX::XMFLOAT2& GetAncjorPoint() { return anchorPoint_; }
-
-	/// <summary>
-	/// 色の設定
-	/// </summary>
-	/// <param name="color">色</param>
-	void SetColor(const DirectX::XMFLOAT4& color) { color_ = color; }
-
-	const DirectX::XMFLOAT4& GetColor() { return color_; }
-	
-	/// <summary>
-	/// 左右反転の設定
-	/// </summary>
-	/// <param name="isFlipX">左右反転</param>
-	void SetISFlipX(bool isFlipX);
-
-	bool GetIsFlipX() { return isFlipX_; }
-
-	/// <summary>
-	/// 上下反転の設定
-	/// </summary>
-	/// <param name="isFlipX">上下反転</param>
-	void SetISFlipY(bool isFlipY);
-
-	bool GetIsFlipY() { return isFlipY_; }
-
-	/// <summary>
-	/// テクスチャ範囲設定
-	/// </summary>
-	/// <param name="texBase">テクスチャ左上座標</param>
-	/// <param name="texSize">テクスチャサイズ</param>
-	void SetTextureRect(const DirectX::XMFLOAT2& texBase, const DirectX::XMFLOAT2& texSize);
+	uint32_t GetTevtureHandle() { return textureHandle_;}
 
 	/// <summary>
 	/// 描画
@@ -247,26 +170,6 @@ private:
 
 	//テクスチャ番号
 	UINT textureHandle_ = 0;
-	// Z軸回りの回転角
-	float rotation_ = 0.0f;
-	// 座標
-	DirectX::XMFLOAT2 position_{};
-	// スプライト幅、高さ
-	DirectX::XMFLOAT2 size_ = { 100.0f, 100.0f };
-	// アンカーポイント
-	DirectX::XMFLOAT2 anchorPoint_ = { 0,0 };
-	// ワールド行列
-	DirectX::XMMATRIX matWorld_{};
-	// 色
-	DirectX::XMFLOAT4 color_ = { 1,1,1,1 };
-	// 左右反転
-	bool isFlipX_ = false;
-	// 上下反転
-	bool isFlipY_ = false;
-	// テクスチャ始点
-	DirectX::XMFLOAT2 texBase_ = { 0,0 };
-	// テクスチャ幅、高さ
-	DirectX::XMFLOAT2 texSize_ = { 100.0f, 100.0f };
 	// リソース設定
 	D3D12_RESOURCE_DESC resourceDesc_;
 

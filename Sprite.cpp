@@ -231,8 +231,7 @@ void Sprite::PostDraw() {
 /// <param name="isFlipY">上下反転</param>
 /// <returns>生成されたスプライト</returns>
 Sprite* Sprite::Create(
-	uint32_t textureHandle, DirectX::XMFLOAT2 position, DirectX::XMFLOAT4 color,
-	DirectX::XMFLOAT2 anchorpoint, bool isFlipX, bool isFlipY) {
+	uint32_t textureHandle, const Vector3& scale, const Vector3& rotate, const Vector3& position) {
 
 	// 仮サイズ
 	XMFLOAT2 size = { 100.0f, 100.0f };
@@ -243,7 +242,7 @@ Sprite* Sprite::Create(
 	size = { (float)resDesc.Width, (float)resDesc.Height };
 
 	// Spriteのインスタンスを生成
-	Sprite* sprite = new Sprite(textureHandle, position, size, color, anchorpoint, isFlipX, isFlipY);
+	Sprite* sprite = new Sprite(textureHandle, scale, rotate, position);
 	if (sprite == nullptr) {
 		return nullptr;
 	}
@@ -268,18 +267,12 @@ Sprite::Sprite() {}
 /// コンストラクタ
 /// </summary>
 Sprite::Sprite(
-	uint32_t textureHandle, DirectX::XMFLOAT2 position, DirectX::XMFLOAT2 size,
-	DirectX::XMFLOAT4 color, DirectX::XMFLOAT2 anchorpoint, bool isFlipX, bool isFlipY) {
+	uint32_t textureHandle, const Vector3& scale, const Vector3& rotate, const Vector3& position ) {
 
-	position_ = position;
-	size_ = size;
-	anchorPoint_ = anchorPoint_;
-	matWorld_ = XMMatrixIdentity();
-	color_ = color;
+
 	textureHandle_ = textureHandle;
-	isFlipX_ = isFlipX;
-	isFlipY_ = isFlipY;
-	texSize_ = size;
+	//CPUで動かす用のTransformを作る
+	transformSprite = { scale, rotate, position };
 
 }
 
@@ -401,91 +394,7 @@ void Sprite::SetTextureHandle(uint32_t textureHandle) {
 
 }
 
-/// <summary>
-/// 座標の設定
-/// </summary>
-/// <param name="position">座標</param>
-void Sprite::SetPosition(const DirectX::XMFLOAT2& position) {
 
-	position_ = position;
-
-	TransferVertices();
-
-}
-
-/// <summary>
-/// 角度の設定
-/// </summary>
-/// <param name="rotation">角度</param>
-void Sprite::SetRotation(float rotation) {
-
-	rotation_ = rotation;
-
-	TransferVertices();
-
-}
-
-/// <summary>
-/// サイズの設定
-/// </summary>
-/// <param name="size">サイズ</param>
-void Sprite::SetSize(const DirectX::XMFLOAT2& size) {
-
-	size_ = size;
-
-	TransferVertices();
-
-}
-
-/// <summary>
-/// アンカーポイントの設定
-/// </summary>
-/// <param name="anchorpoint">アンカーポイント</param>
-void Sprite::SetAnchorPoint(const DirectX::XMFLOAT2& anchorpoint) {
-
-	anchorPoint_ = anchorpoint;
-
-	TransferVertices();
-
-}
-
-/// <summary>
-/// 左右反転の設定
-/// </summary>
-/// <param name="isFlipX">左右反転</param>
-void Sprite::SetISFlipX(bool isFlipX) {
-
-	isFlipX_ = isFlipX;
-
-	TransferVertices();
-
-}
-
-/// <summary>
-/// 上下反転の設定
-/// </summary>
-/// <param name="isFlipX">上下反転</param>
-void Sprite::SetISFlipY(bool isFlipY) {
-
-	isFlipY_ = isFlipY;
-
-	TransferVertices();
-
-}
-
-/// <summary>
-/// テクスチャ範囲設定
-/// </summary>
-/// <param name="texBase">テクスチャ左上座標</param>
-/// <param name="texSize">テクスチャサイズ</param>
-void Sprite::SetTextureRect(const DirectX::XMFLOAT2& texBase, const DirectX::XMFLOAT2& texSize) {
-
-	texBase_ = texBase;
-	texSize_ = texSize;
-
-	TransferVertices();
-
-}
 
 /// <summary>
 /// 描画
@@ -524,54 +433,7 @@ void Sprite::Draw() {
 /// </summary>
 void Sprite::TransferVertices() {
 
-	//HRESULT hr;
 
-	enum {LB, LT, RB, LT2, RT, RB2
-	};
-
-	float left = (0.0f - anchorPoint_.x) * size_.x;
-	float right = (1.0f - anchorPoint_.x) * size_.x;
-	float top = (0.0f - anchorPoint_.y) * size_.y;
-	float bottom = (1.0f - anchorPoint_.y) * size_.y;
-	if (isFlipX_) {
-		left = -left;
-		right = -right;
-	}
-
-	if (isFlipY_) {
-		top = -top;
-		bottom = -bottom;
-	}
-
-	// 頂点データ
-	VertexPosUv vertices[kVertNum];
-
-	vertices[LB].pos = { left, bottom, 0.0f };
-	vertices[LT].pos = { left, top, 0.0f };
-	vertices[RB].pos = { right, bottom, 0.0f };
-	vertices[LT2].pos = { left, top, 0.0f };
-	vertices[RT].pos = { right, top, 0.0f };
-	vertices[RB2].pos = { right, bottom, 0.0f };
-
-	// テクスチャ情報取得
-	{
-
-		float tex_left = texBase_.x / resourceDesc_.Width;
-		float tex_right = (texBase_.x + texSize_.x) / resourceDesc_.Width;
-		float tex_top = texBase_.y / resourceDesc_.Height;
-		float tex_bottom = (texBase_.y + texSize_.y) / resourceDesc_.Height;
-
-		vertices[LB].uv = { tex_left, tex_bottom };
-		vertices[LT].uv = { tex_left, tex_top };
-		vertices[RB].uv = { tex_right, tex_bottom };
-		vertices[LT2].uv = { tex_left, tex_top };
-		vertices[RT].uv = { tex_right, tex_top };
-		vertices[RB2].uv = { tex_right, tex_bottom };
-
-	}
-	
-	// 頂点バッファへのデータ転送
-	//memcpy(vertMap, vertices, sizeof(vertices));
 
 }
 

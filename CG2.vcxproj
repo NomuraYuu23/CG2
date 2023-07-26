@@ -131,7 +131,9 @@ copy "$(WindowsSdkDir)bin\$(TargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dx
     <ClInclude Include="SafeDelete.h" />
     <ClInclude Include="Sprite.h" />
     <ClInclude Include="TextureManager.h" />
+    <ClInclude Include="Vector2.h" />
     <ClInclude Include="Vector3.h" />
+    <ClInclude Include="Vector4.h" />
     <ClInclude Include="WinApp.h" />
   </ItemGroup>
   <ItemGroup>
