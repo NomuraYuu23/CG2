@@ -1,5 +1,6 @@
 #include "Sprite.h"
 #include "TextureManager.h"
+#include "WinApp.h"
 #include <cassert>
 
 using namespace DirectX;
@@ -290,81 +291,100 @@ bool Sprite::Initialize() {
 
 	assert(sDevice);
 
-	HRESULT hr;
+	//HRESULT hr;
 
 	resourceDesc_ = TextureManager::GetInstance()->GetResourceDesc(textureHandle_);
-	
-	{
 
-	//頂点リソース用のヒープの設定
-	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
-	uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;//UploadHeapを使う
-	//頂点リソースの設定
-	D3D12_RESOURCE_DESC vertexResourceDesc{};
-	//バッファリソース。テクスチャの場合はまた別の設定をする
-	vertexResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	vertexResourceDesc.Width = sizeof(VertexPosUv) * kVertNum;//リソースのサイズ。今回はVector4を3頂点分
-	//バッファの場合はこれらは1にする決まり
-	vertexResourceDesc.Height = 1;
-	vertexResourceDesc.DepthOrArraySize = 1;
-	vertexResourceDesc.MipLevels = 1;
-	vertexResourceDesc.SampleDesc.Count = 1;
-	//バッファの場合はこれにする決まり
-	vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	//Sprite用の頂点リソースを作る
+	vertBuff_ = CreateBufferResource(sDevice, sizeof(VertexData) * 6);
 
-	// 頂点バッファ生成
-	hr = sDevice->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
-		&vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
-		IID_PPV_ARGS(&vertBuff_));
-	assert(SUCCEEDED(hr));
-
-	// 頂点バッファマッピング
-	hr = vertBuff_->Map(0, nullptr, (void**)&vertMap);
-	assert(SUCCEEDED(hr));
-
-	}
-
-	// 頂点バッファへのデータ転送
-	TransferVertices();
-
-	// 頂点バッファビューの作成
-	
 	//リソースの先頭のアドレスから使う
 	vbView_.BufferLocation = vertBuff_->GetGPUVirtualAddress();
-	//使用するリソースのサイズ
-	vbView_.SizeInBytes = sizeof(VertexPosUv) * 4;
+	//使用するリソースのサイズは頂点6つ分のサイズ
+	vbView_.SizeInBytes = sizeof(VertexData) * 6;
 	//1頂点あたりのサイズ
-	vbView_.StrideInBytes = sizeof(VertexPosUv);
+	vbView_.StrideInBytes = sizeof(VertexData);
 
-	{
+	//書き込むためのアドレスを取得
+	vertBuff_->Map(0, nullptr, reinterpret_cast<void**>(&vertMap));
 
-		//ヒープの設定
-		D3D12_HEAP_PROPERTIES uploadHeapProperties{};
-		uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;//UploadHeapを使う
-		//リソースの設定
-		D3D12_RESOURCE_DESC vertexResourceDesc{};
-		//バッファリソース。テクスチャの場合はまた別の設定をする
-		vertexResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-		vertexResourceDesc.Width = (sizeof(ConstBufferData) + 0xff) & ~0xff;
-		//バッファの場合はこれらは1にする決まり
-		vertexResourceDesc.Height = 1;
-		vertexResourceDesc.DepthOrArraySize = 1;
-		vertexResourceDesc.MipLevels = 1;
-		vertexResourceDesc.SampleDesc.Count = 1;
-		//バッファの場合はこれにする決まり
-		vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	//インデックスリソースを作る
+	indexBuff_ = CreateBufferResource(sDevice, sizeof(uint32_t) * 6);
 
-		// 定数バッファ生成
-		hr = sDevice->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
-			&vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
-			IID_PPV_ARGS(&constBuff_));
-		assert(SUCCEEDED(hr));
+	//インデックスバッファビュー
+	//リソースの先頭のアドレスから使う
+	ibView_.BufferLocation = indexBuff_->GetGPUVirtualAddress();
+	//使用するリソースのサイズはインデックス6つ分のサイズ
+	ibView_.SizeInBytes = sizeof(uint32_t) * 6;
+	//インデックスはuint32_tとする
+	ibView_.Format = DXGI_FORMAT_R32_UINT;
 
-		// 定数バッファマッピング
-		hr = constBuff_->Map(0, nullptr, (void**)&constMap);
-		assert(SUCCEEDED(hr));
+	//インデックスリソースにデータを書き込む
+	indexBuff_->Map(0, nullptr, reinterpret_cast<void**>(&indexMap));
 
-	}
+	//一枚目の三角形
+	vertMap[0].position = { 0.0f, 360.0f, 0.0f, 1.0f };//左下
+	vertMap[0].texcoord = { 0.0f, 1.0f };
+	vertMap[0].normal = { 0.0f, 0.0f, -1.0f };
+	vertMap[1].position = { 0.0f, 0.0f, 0.0f, 1.0f };//左上
+	vertMap[1].texcoord = { 0.0f, 0.0f };
+	vertMap[1].normal = { 0.0f, 0.0f, -1.0f };
+	vertMap[2].position = { 640.0f, 360.0f, 0.0f, 1.0f };//右下
+	vertMap[2].texcoord = { 1.0f, 1.0f };
+	vertMap[2].normal = { 0.0f, 0.0f, -1.0f };
+	//ニ枚目の三角形
+	vertMap[3].position = { 640.0f, 0.0f, 0.0f, 1.0f };//右上
+	vertMap[3].texcoord = { 1.0f, 0.0f };
+	vertMap[3].normal = { 0.0f, 0.0f, -1.0f };
+	vertMap[4].position = { 0.0f, 0.0f, 0.0f, 1.0f };//左上
+	vertMap[4].texcoord = { 0.0f, 0.0f };
+	vertMap[4].normal = { 0.0f, 0.0f, -1.0f };
+	vertMap[5].position = { 640.0f, 360.0f, 0.0f, 1.0f };//右下
+	vertMap[5].texcoord = { 1.0f, 1.0f };
+	vertMap[5].normal = { 0.0f, 0.0f, -1.0f };
+
+	//インデックスリソースにデータを書き込む
+	indexMap[0] = 0;
+	indexMap[1] = 1;
+	indexMap[2] = 2;
+	indexMap[3] = 1;
+	indexMap[4] = 3;
+	indexMap[5] = 2;
+
+	//Sprite用のTransformationMatrix用のリソースを作る。Matrix4x4 1つ分のサイズ
+	transformationMatrixBuff_ = CreateBufferResource(sDevice, sizeof(TransformationMatrix));
+
+	//書き込むためのアドレスを取得
+	transformationMatrixBuff_->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixMap));
+	//単位行列を書き込んでおく
+	transformationMatrixMap->World = MakeIdentity4x4();
+	transformationMatrixMap->WVP = MakeIdentity4x4();
+
+	//CPUで動かす用のTransformを作る
+	transformSprite = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+
+
+	/*
+	//Sprite用のマテリアルリソースを作る
+	Microsoft::WRL::ComPtr<ID3D12Resource> materialResourceSprite = CreateBufferResource(dxCommon->GetDevice(), sizeof(Material));
+	//マテリアルにデータを書き込む
+	Material* materialDataSprite = nullptr;
+	//書き込むためのアドレスを取得
+	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&materialDataSprite));
+	//白を書き込んでみる
+	materialDataSprite->color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	//SpriteはLightingしないのでfalseを設定する
+	materialDataSprite->enableLighting = false;	//UVTransfome初期化
+	materialDataSprite->uvTransform = MakeIdentity4x4();
+
+	TransformStructure uvTransformSprite{
+		{1.0f,1.0f,1.0f},
+		{0.0f,0.0f,0.0f},
+		{0.0f,0.0f,0.0f},
+	};
+
+	*/
+
 
 	return true;
 
@@ -472,25 +492,30 @@ void Sprite::SetTextureRect(const DirectX::XMFLOAT2& texBase, const DirectX::XMF
 /// </summary>
 void Sprite::Draw() {
 
-	// ワールド行列の更新
-	matWorld_ = XMMatrixIdentity();
-	matWorld_ *= XMMatrixRotationZ(rotation_);
-	matWorld_ *= XMMatrixTranslation(position_.x, position_.y, 0.0f);
-	
-	// 定数バッファにデータ転送
-	constMap->color = color_;
-	constMap->mat = matWorld_ * sMatProjection; // 行列の合成
+	//Sprite用のWorldViewProjectionMatrixを作る
+	Matrix4x4 WorldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
+	Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
+	Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kWindowWidth), float(WinApp::kWindowHeight), 0.0f, 100.0f);
+	Matrix4x4 worldViewProjectionMatrixSprite = Multiply(WorldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
+	transformationMatrixMap->WVP = worldViewProjectionMatrixSprite;
+	transformationMatrixMap->World = WorldMatrixSprite;
 
 	// 頂点バッファの設定
 	sCommandList->IASetVertexBuffers(0, 1, &vbView_);
+	//IBVを設定
+	sCommandList->IASetIndexBuffer(&ibView_);
+	//マテリアルCBufferの場所を設定
+	//sCommandList->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
 
-	// 頂点バッファビューをセット
-	sCommandList->SetGraphicsRootConstantBufferView(1, constBuff_->GetGPUVirtualAddress());
+	//TransformationMatrixCBufferの場所を設定
+	sCommandList->SetGraphicsRootConstantBufferView(1, transformationMatrixBuff_->GetGPUVirtualAddress());
 
 	// シェーダーリソースビューをセット
 	TextureManager::GetInstance()->SetGraphicsRootDescriptorTable(sCommandList, 2, textureHandle_);
-	// 描画コマンド
-	sCommandList->DrawInstanced(4, 1, 0, 0);
+
+	//描画
+	//commandList->DrawInstanced(6, 1, 0, 0);
+	sCommandList->DrawIndexedInstanced(kVertNum, 1, 0, 0, 0);
 
 }
 
@@ -501,7 +526,8 @@ void Sprite::TransferVertices() {
 
 	//HRESULT hr;
 
-	enum {LB, LT, RB, RT};
+	enum {LB, LT, RB, LT2, RT, RB2
+	};
 
 	float left = (0.0f - anchorPoint_.x) * size_.x;
 	float right = (1.0f - anchorPoint_.x) * size_.x;
@@ -523,7 +549,9 @@ void Sprite::TransferVertices() {
 	vertices[LB].pos = { left, bottom, 0.0f };
 	vertices[LT].pos = { left, top, 0.0f };
 	vertices[RB].pos = { right, bottom, 0.0f };
+	vertices[LT2].pos = { left, top, 0.0f };
 	vertices[RT].pos = { right, top, 0.0f };
+	vertices[RB2].pos = { right, bottom, 0.0f };
 
 	// テクスチャ情報取得
 	{
@@ -536,12 +564,14 @@ void Sprite::TransferVertices() {
 		vertices[LB].uv = { tex_left, tex_bottom };
 		vertices[LT].uv = { tex_left, tex_top };
 		vertices[RB].uv = { tex_right, tex_bottom };
+		vertices[LT2].uv = { tex_left, tex_top };
 		vertices[RT].uv = { tex_right, tex_top };
+		vertices[RB2].uv = { tex_right, tex_bottom };
 
 	}
 	
 	// 頂点バッファへのデータ転送
-	memcpy(vertMap, vertices, sizeof(vertices));
+	//memcpy(vertMap, vertices, sizeof(vertices));
 
 }
 
@@ -647,4 +677,34 @@ std::string Sprite::ConvertString(const std::wstring& str) {
 	std::string result(sizeNeeded, 0);
 	WideCharToMultiByte(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), result.data(), sizeNeeded, NULL, NULL);
 	return result;
+}
+
+//Resource作成関数化
+Microsoft::WRL::ComPtr<ID3D12Resource>  Sprite::CreateBufferResource(Microsoft::WRL::ComPtr<ID3D12Device> device, const size_t& sizeInBytes) {
+
+	//頂点リソース用のヒープの設定
+	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
+	uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;//UploadHeapを使う
+	//頂点リソースの設定
+	D3D12_RESOURCE_DESC vertexResourceDesc{};
+	//バッファリソース。テクスチャの場合はまた別の設定をする
+	vertexResourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	vertexResourceDesc.Width = sizeInBytes;//リソースのサイズ。今回はVector4を3頂点分
+	//バッファの場合はこれらは1にする決まり
+	vertexResourceDesc.Height = 1;
+	vertexResourceDesc.DepthOrArraySize = 1;
+	vertexResourceDesc.MipLevels = 1;
+	vertexResourceDesc.SampleDesc.Count = 1;
+	//バッファの場合はこれにする決まり
+	vertexResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+	//実際に頂点リソースを作る
+	Microsoft::WRL::ComPtr<ID3D12Resource> vertexResource = nullptr;
+	HRESULT hr = device->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
+		&vertexResourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
+		IID_PPV_ARGS(&vertexResource));
+	assert(SUCCEEDED(hr));
+
+	return vertexResource;
+
 }

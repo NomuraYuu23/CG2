@@ -939,7 +939,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 
-		dxCommon->GetCommadList()->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
+		//dxCommon->GetCommadList()->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
 		//背景スプライト描画
 		sprite->Draw();
 
@@ -986,6 +986,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//IBVを設定
 		//dxCommon->GetCommadList()->IASetIndexBuffer(&indexBufferViewSprite);
 		//マテリアルCBufferの場所を設定
+		//dxCommon->GetCommadList()->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
 		//TransformationMatrixCBufferの場所を設定
 		//dxCommon->GetCommadList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
 

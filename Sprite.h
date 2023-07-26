@@ -9,6 +9,9 @@
 
 #pragma comment(lib, "dxcompiler.lib")
 
+#include "Vector3.h"
+#include "Matrix4x4.h"
+
 /// <summary>
 /// スプライト
 /// </summary>
@@ -30,6 +33,38 @@ public:
 	struct ConstBufferData {
 		DirectX::XMFLOAT4 color; // 色(RGBA)
 		DirectX::XMMATRIX mat;   // 3D変換行列
+	};
+
+	struct Vector4 {
+		float x;
+		float y;
+		float z;
+		float w;
+	};
+
+	struct Vector2 {
+
+		float x;
+		float y;
+
+	};
+
+	struct VertexData {
+
+		Vector4 position;
+		Vector2 texcoord;
+		Vector3 normal;
+
+	};
+	struct TransformationMatrix {
+		Matrix4x4 WVP;
+		Matrix4x4 World;
+	};
+	//Transform構造体
+	struct TransformStructure {
+		Vector3 scale;
+		Vector3 rotate;
+		Vector3 translate;
 	};
 
 public:
@@ -73,7 +108,7 @@ public:
 private:
 
 	// 頂点数
-	static const int kVertNum = 4;
+	static const int kVertNum = 6;
 	// デバイス
 	static ID3D12Device* sDevice;
 	// ディスクリプタサイズ
@@ -187,11 +222,29 @@ private:
 	// 定数バッファ
 	Microsoft::WRL::ComPtr<ID3D12Resource> constBuff_;
 	// 頂点バッファマップ
-	VertexPosUv* vertMap = nullptr;
+	VertexData* vertMap = nullptr;
 	// 定数バッファマップ
 	ConstBufferData* constMap = nullptr;
 	// 頂点バッファビュー
 	D3D12_VERTEX_BUFFER_VIEW vbView_{};
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> indexBuff_;
+
+	//インデックスバッファビュー
+	D3D12_INDEX_BUFFER_VIEW ibView_{};
+
+	//インデックスリソースにデータを書き込む
+	uint32_t* indexMap = nullptr;
+
+	//Sprite用のTransformationMatrix用のリソースを作る。Matrix4x4 1つ分のサイズ
+	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixBuff_;
+	//データを書き込む
+	TransformationMatrix* transformationMatrixMap = nullptr;
+
+	//CPUで動かす用のTransformを作る
+	TransformStructure transformSprite;
+
+
 	//テクスチャ番号
 	UINT textureHandle_ = 0;
 	// Z軸回りの回転角
@@ -242,7 +295,8 @@ private:
 
 	static std::string ConvertString(const std::wstring& str);
 
-
+	//Resource作成関数化
+	static Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(Microsoft::WRL::ComPtr<ID3D12Device> device, const size_t& sizeInBytes);
 
 };
 
