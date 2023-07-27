@@ -16,8 +16,6 @@ ID3D12GraphicsCommandList* Sprite::sCommandList = nullptr;
 ComPtr<ID3D12RootSignature> Sprite::sRootSignature;
 // パイプラインステートオブジェクト
 ComPtr<ID3D12PipelineState> Sprite::sPipelineState;
-// 射影行列
-DirectX::XMMATRIX Sprite::sMatProjection;
 
 /// <summary>
 /// 静的初期化
@@ -186,11 +184,6 @@ void Sprite::StaticInitialize(
 		IID_PPV_ARGS(&sPipelineState));
 	assert(SUCCEEDED(hr));
 
-	// 射影行列計算
-	sMatProjection = XMMatrixOrthographicOffCenterLH(
-		0.0f, (float)window_width, (float)window_height, 0.0f, 0.0f, 1.0f
-	);
-
 }
 
 /// <summary>
@@ -234,7 +227,7 @@ Sprite* Sprite::Create(
 	uint32_t textureHandle, const Vector3& scale, const Vector3& rotate, const Vector3& position) {
 
 	// 仮サイズ
-	XMFLOAT2 size = { 100.0f, 100.0f };
+	Vector2 size = { 100.0f, 100.0f };
 
 	// テクスチャ情報取得
 	const D3D12_RESOURCE_DESC& resDesc = TextureManager::GetInstance()->GetResourceDesc(textureHandle);
@@ -242,7 +235,7 @@ Sprite* Sprite::Create(
 	size = { (float)resDesc.Width, (float)resDesc.Height };
 
 	// Spriteのインスタンスを生成
-	Sprite* sprite = new Sprite(textureHandle, scale, rotate, position);
+	Sprite* sprite = new Sprite(textureHandle, scale, rotate, position, size);
 	if (sprite == nullptr) {
 		return nullptr;
 	}
@@ -267,12 +260,14 @@ Sprite::Sprite() {}
 /// コンストラクタ
 /// </summary>
 Sprite::Sprite(
-	uint32_t textureHandle, const Vector3& scale, const Vector3& rotate, const Vector3& position ) {
+	uint32_t textureHandle, const Vector3& scale, const Vector3& rotate, const Vector3& position, const Vector2& size ) {
 
 
 	textureHandle_ = textureHandle;
 	//CPUで動かす用のTransformを作る
 	transformSprite = { scale, rotate, position };
+	//大きさ
+	size_ = size;
 
 }
 
@@ -316,23 +311,23 @@ bool Sprite::Initialize() {
 	indexBuff_->Map(0, nullptr, reinterpret_cast<void**>(&indexMap));
 
 	//一枚目の三角形
-	vertMap[0].position = { 0.0f, 360.0f, 0.0f, 1.0f };//左下
+	vertMap[0].position = { 0.0f, size_.y, 0.0f, 1.0f };//左下
 	vertMap[0].texcoord = { 0.0f, 1.0f };
 	vertMap[0].normal = { 0.0f, 0.0f, -1.0f };
 	vertMap[1].position = { 0.0f, 0.0f, 0.0f, 1.0f };//左上
 	vertMap[1].texcoord = { 0.0f, 0.0f };
 	vertMap[1].normal = { 0.0f, 0.0f, -1.0f };
-	vertMap[2].position = { 640.0f, 360.0f, 0.0f, 1.0f };//右下
+	vertMap[2].position = { size_.x, size_.y, 0.0f, 1.0f };//右下
 	vertMap[2].texcoord = { 1.0f, 1.0f };
 	vertMap[2].normal = { 0.0f, 0.0f, -1.0f };
 	//ニ枚目の三角形
-	vertMap[3].position = { 640.0f, 0.0f, 0.0f, 1.0f };//右上
+	vertMap[3].position = { size_.x, 0.0f, 0.0f, 1.0f };//右上
 	vertMap[3].texcoord = { 1.0f, 0.0f };
 	vertMap[3].normal = { 0.0f, 0.0f, -1.0f };
 	vertMap[4].position = { 0.0f, 0.0f, 0.0f, 1.0f };//左上
 	vertMap[4].texcoord = { 0.0f, 0.0f };
 	vertMap[4].normal = { 0.0f, 0.0f, -1.0f };
-	vertMap[5].position = { 640.0f, 360.0f, 0.0f, 1.0f };//右下
+	vertMap[5].position = { size_.x, size_.y, 0.0f, 1.0f };//右下
 	vertMap[5].texcoord = { 1.0f, 1.0f };
 	vertMap[5].normal = { 0.0f, 0.0f, -1.0f };
 
@@ -384,6 +379,23 @@ bool Sprite::Initialize() {
 }
 
 /// <summary>
+/// 更新
+/// </summary>
+void Sprite::Update() {
+
+	transformSprite = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+
+	//Sprite用のWorldViewProjectionMatrixを作る
+	Matrix4x4 WorldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
+	Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
+	Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kWindowWidth), float(WinApp::kWindowHeight), 0.0f, 100.0f);
+	Matrix4x4 worldViewProjectionMatrixSprite = Multiply(WorldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
+	transformationMatrixMap->WVP = worldViewProjectionMatrixSprite;
+	transformationMatrixMap->World = WorldMatrixSprite;
+
+}
+
+/// <summary>
 /// テクスチャハンドルの設定
 /// </summary>
 /// <param name="textureHandle"></param>
@@ -401,14 +413,6 @@ void Sprite::SetTextureHandle(uint32_t textureHandle) {
 /// </summary>
 void Sprite::Draw() {
 
-	//Sprite用のWorldViewProjectionMatrixを作る
-	Matrix4x4 WorldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
-	Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
-	Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kWindowWidth), float(WinApp::kWindowHeight), 0.0f, 100.0f);
-	Matrix4x4 worldViewProjectionMatrixSprite = Multiply(WorldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
-	transformationMatrixMap->WVP = worldViewProjectionMatrixSprite;
-	transformationMatrixMap->World = WorldMatrixSprite;
-
 	// 頂点バッファの設定
 	sCommandList->IASetVertexBuffers(0, 1, &vbView_);
 	//IBVを設定
@@ -423,17 +427,7 @@ void Sprite::Draw() {
 	TextureManager::GetInstance()->SetGraphicsRootDescriptorTable(sCommandList, 2, textureHandle_);
 
 	//描画
-	//commandList->DrawInstanced(6, 1, 0, 0);
 	sCommandList->DrawIndexedInstanced(kVertNum, 1, 0, 0, 0);
-
-}
-
-/// <summary>
-/// 頂点データ転送
-/// </summary>
-void Sprite::TransferVertices() {
-
-
 
 }
 

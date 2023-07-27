@@ -107,7 +107,7 @@ private:
 	// パイプラインステートオブジェクト
 	static Microsoft::WRL::ComPtr<ID3D12PipelineState> sPipelineState;
 	// 射影行列
-	static DirectX::XMMATRIX sMatProjection;
+	//static DirectX::XMMATRIX sMatProjection;
 
 public:
 	/// <summary>
@@ -118,13 +118,18 @@ public:
 	/// コンストラクタ
 	/// </summary>
 	Sprite(
-		uint32_t textureHandle, const Vector3& scale, const Vector3& rotate, const Vector3& position);
+		uint32_t textureHandle, const Vector3& scale, const Vector3& rotate, const Vector3& position, const Vector2& size);
 
 	/// <summary>
 	/// 初期化
 	/// </summary>
 	/// <returns>成否</returns>
 	bool Initialize();
+
+	/// <summary>
+	/// 更新
+	/// </summary>
+	void Update();
 
 	/// <summary>
 	/// テクスチャハンドルの設定
@@ -172,13 +177,11 @@ private:
 	UINT textureHandle_ = 0;
 	// リソース設定
 	D3D12_RESOURCE_DESC resourceDesc_;
+	// サイズ
+	Vector2 size_;
 
 
 private:
-	/// <summary>
-	/// 頂点データ転送
-	/// </summary>
-	void TransferVertices();
 
 	//ログ
 	static void Log(const std::string& message);

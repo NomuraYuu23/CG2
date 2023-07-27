@@ -827,6 +827,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		uvTransformMatrix = Multiply(uvTransformMatrix, MakeTranslateMatrix(uvTransformSprite.translate));
 		materialDataSprite->uvTransform = uvTransformMatrix;
 
+		sprite->Update();
+
+
 		//ImGuiの内部コマンドを生成する
 		//ImGui::Render();
 
