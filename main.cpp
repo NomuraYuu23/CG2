@@ -32,6 +32,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "TransformationMatrix.h"
 #include "TransformStructure.h"
 #include "MaterialData.h"
+#include "DirectionalLightData.h"
 #include <wrl.h>
 
 //クラス化
@@ -41,13 +42,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "Sprite.h"
 #include "Model.h"
 #include "Material.h"
-
-struct DirectionalLight {
-	Vector4 color;
-	Vector3 direction;
-	float intencity;
-
-};
+#include "DirectionalLight.h"
 
 struct D3DResourceLeakChecker
 {
