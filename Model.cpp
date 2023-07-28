@@ -42,7 +42,7 @@ void Model::StaticInitialize(
 /// <param name="cmdList">描画コマンドリスト</param>
 void Model::PreDraw(ID3D12GraphicsCommandList* cmdList) {
 
-	assert(Model::sCommandList == nullptr);
+	assert(sCommandList == nullptr);
 
 	sCommandList = cmdList;
 

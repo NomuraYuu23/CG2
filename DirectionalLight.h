@@ -21,6 +21,12 @@ public:
 	/// <param name="device">デバイス</param>
 	static void StaticInitialize(ID3D12Device* device);
 
+	/// <summary>
+	/// 光源生成
+	/// </summary>
+	/// <returns></returns>
+	static DirectionalLight* Create();
+
 private:
 
 	// デバイス
@@ -72,12 +78,12 @@ public:
 	/// <summary>
 	/// 更新
 	/// </summary>
-	void Update();
+	void Update(const DirectionalLightData& directionalLightData);
 
 	/// <summary>
 	/// 描画
 	/// </summary>
-	void Draw();
+	void Draw(ID3D12GraphicsCommandList* cmdList);
 
 private:
 

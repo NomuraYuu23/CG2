@@ -31,8 +31,26 @@ void DirectionalLight::StaticInitialize(
 	assert(device);
 
 	sDevice = device;
+
 	// グラフィックパイプライン生成
 	InitializeGraphicsPipeline();
+
+}
+
+
+/// <summary>
+/// 光源生成
+/// </summary>
+/// <returns></returns>
+DirectionalLight* DirectionalLight::Create() {
+
+	DirectionalLight* directionalLight = new DirectionalLight();
+	assert(directionalLight);
+
+	//初期化
+	directionalLight->Initialize();
+
+	return directionalLight;
 
 }
 
@@ -354,20 +372,28 @@ void DirectionalLight::Initialize() {
 /// <summary>
 /// 更新
 /// </summary>
-void DirectionalLight::Update() {
+void DirectionalLight::Update(const DirectionalLightData& directionalLightData) {
 
-
-
+	directionalLightMap->color = directionalLightData.color;
+	directionalLightMap->direction = directionalLightData.direction;
+	directionalLightMap->intencity = directionalLightData.intencity;
 
 }
 
 /// <summary>
 /// 描画
 /// </summary>
-void DirectionalLight::Draw() {
+void DirectionalLight::Draw(ID3D12GraphicsCommandList* cmdList) {
+
+	assert(sCommandList == nullptr);
+
+	sCommandList = cmdList;
 
 	//光源
 	sCommandList->SetGraphicsRootConstantBufferView(3, directionalLightBuff_->GetGPUVirtualAddress());
+
+	// コマンドリストを解除
+	sCommandList = nullptr;
 
 }
 
