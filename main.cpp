@@ -169,9 +169,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 
-		ImGui::DragFloat3("uvTransform.translate", &uvTransformSprite.translate.x);
-		ImGui::DragFloat3("uvTransform.rotate", &uvTransformSprite.rotate.x);
-		ImGui::DragFloat3("uvTransform.scale", &uvTransformSprite.scale.x);
+		ImGui::DragFloat2("transformSprite.translate", &transformSprite.translate.x);
+		ImGui::DragFloat2("transformSprite.scale", &transformSprite.scale.x, 0.01f, -10.0f, 10.0f);
+		ImGui::SliderAngle("transformSprite.rotate", &transformSprite.rotate.z);
+		ImGui::DragFloat2("uvTransform.translate", &uvTransformSprite.translate.x, 0.01f, -1.0f, 1.0f);
+		ImGui::DragFloat2("uvTransform.scale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
+		ImGui::SliderAngle("uvTransform.rotate", &uvTransformSprite.rotate.z);
 		ImGui::ColorEdit4("color", &colorSprite.x);
 
 		//開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
