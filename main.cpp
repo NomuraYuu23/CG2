@@ -31,6 +31,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "VertexData.h"
 #include "TransformationMatrix.h"
 #include "TransformStructure.h"
+#include "MaterialData.h"
 #include <wrl.h>
 
 //クラス化
@@ -39,14 +40,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "TextureManager.h"
 #include "Sprite.h"
 #include "Model.h"
-
-
-struct Material {
-	Vector4 color;
-	int32_t enableLighting;
-	float padding[3];
-	Matrix4x4 uvTransform;
-};
+#include "Material.h"
 
 struct DirectionalLight {
 	Vector4 color;
@@ -371,6 +365,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// モデル静的初期化
 	Model::StaticInitialize(dxCommon->GetDevice());
 
+	// マテリアル静的初期化
+	Material::StaticInitialize(dxCommon->GetDevice());
+
 	D3DResourceLeakChecker leakChecker;
 
 	HRESULT hr;
@@ -527,9 +524,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	///
 
-	const uint32_t kSubdivision = 16; //分割数
-	const float kLonEvery = 2.0f * float(std::numbers::pi) / float(kSubdivision);//経度分割1つ分の角度
-	const float kLatEvery = float(std::numbers::pi) / float(kSubdivision);//緯度分割1つ分の角度
+	//const uint32_t kSubdivision = 16; //分割数
+	//const float kLonEvery = 2.0f * float(std::numbers::pi) / float(kSubdivision);//経度分割1つ分の角度
+	//const float kLatEvery = float(std::numbers::pi) / float(kSubdivision);//緯度分割1つ分の角度
 
 	//CPUで動かす用のTransformを作る
 	TransformStructure transformSphere{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
@@ -562,6 +559,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	directionalLightData->direction = { 0.0f, -1.0f, 0.0f };
 	directionalLightData->intencity = 1.0f;
 
+	// マテリアル
+	std::unique_ptr<Material> material;
+
+	material.reset(
+		Material::Create()
+	);
+
+	std::unique_ptr<Material> materialSprite;
+
+	materialSprite.reset(
+		Material::Create()
+	);
+
+
+	/*
+
 	//マテリアル用のリソースを作る。今回はcolor1つ分のサイズを用意する
 	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource = CreateBufferResource(dxCommon->GetDevice(), sizeof(Material));
 	//マテリアルにデータを書き込む
@@ -587,10 +600,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	materialDataSprite->enableLighting = false;	//UVTransfome初期化
 	materialDataSprite->uvTransform = MakeIdentity4x4();
 
+	*/
+
+
+
 	TransformStructure uvTransformSprite{
 		{1.0f,1.0f,1.0f},
 		{0.0f,0.0f,0.0f},
 		{0.0f,0.0f,0.0f},
+	};
+	TransformStructure uvTransform{
+	{1.0f,1.0f,1.0f},
+	{0.0f,0.0f,0.0f},
+	{0.0f,0.0f,0.0f},
 	};
 
 	//Transform変数を作る
@@ -637,15 +659,22 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		*/
 
+		/*
+
 		//UVTransfome用
 		Matrix4x4 uvTransformMatrix = MakeScaleMatrix(uvTransformSprite.scale);
 		uvTransformMatrix = Multiply(uvTransformMatrix, MakeRotateZMatrix(uvTransformSprite.rotate.z));
 		uvTransformMatrix = Multiply(uvTransformMatrix, MakeTranslateMatrix(uvTransformSprite.translate));
 		materialDataSprite->uvTransform = uvTransformMatrix;
+		
+		*/
 
 		sprite->Update();
 
 		model->Update(transform, cameraTransform);
+
+		material->Update(uvTransform, Vector4(1.0f, 1.0f, 1.0f, 1.0f), true);
+		materialSprite->Update(uvTransformSprite, Vector4(1.0f, 1.0f, 1.0f, 1.0f), false);
 
 		//ImGuiの内部コマンドを生成する
 		//ImGui::Render();
@@ -659,7 +688,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 
-		dxCommon->GetCommadList()->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
+		dxCommon->GetCommadList()->SetGraphicsRootConstantBufferView(0, materialSprite->GetMaterialBuff()->GetGPUVirtualAddress());
 		//背景スプライト描画
 		sprite->Draw();
 
@@ -678,7 +707,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Model::PreDraw(dxCommon->GetCommadList());
 
 		//マテリアルCBufferの場所を設定
-		dxCommon->GetCommadList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
+		dxCommon->GetCommadList()->SetGraphicsRootConstantBufferView(0, material->GetMaterialBuff()->GetGPUVirtualAddress());
 		model->Draw();
 
 		Model::PostDraw();

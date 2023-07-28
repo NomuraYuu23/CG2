@@ -20,6 +20,20 @@ ComPtr<ID3D12RootSignature> Material::sRootSignature;
 ComPtr<ID3D12PipelineState> Material::sPipelineState;
 
 /// <summary>
+/// 静的初期化
+/// </summary>
+/// <param name="device">デバイス</param>
+void Material::StaticInitialize(ID3D12Device* device) {
+
+	assert(device);
+
+	sDevice = device;
+	// グラフィックパイプライン生成
+	InitializeGraphicsPipeline();
+
+}
+
+/// <summary>
 /// 3Dモデル生成
 /// </summary>
 /// <returns></returns>

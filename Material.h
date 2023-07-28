@@ -23,6 +23,12 @@ class Material
 public:
 
 	/// <summary>
+	/// 静的初期化
+	/// </summary>
+	/// <param name="device">デバイス</param>
+	static void StaticInitialize(ID3D12Device* device);
+
+	/// <summary>
 	/// 3Dモデル生成
 	/// </summary>
 	/// <returns></returns>
@@ -79,6 +85,9 @@ public:
 	/// 更新
 	/// </summary>
 	void Update(const TransformStructure& transform, const Vector4& color, bool enableLighting);
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> GetMaterialBuff() { return materialBuff_; }
+
 
 private:
 
