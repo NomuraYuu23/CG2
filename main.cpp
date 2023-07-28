@@ -1,28 +1,8 @@
 #include <Windows.h>
-#include <cmath>
-#include <numbers>
-#include <cstdint>
-#include <string>
-#include <d3d12.h>
-#include <dxgi1_6.h>
-#include <cassert>
-#include <format>
-#include <vector>
-#include <dxgidebug.h>
-#include <dxcapi.h>
-#pragma comment(lib, "dxgi.lib")
-#pragma comment(lib, "d3d12.lib")
-#pragma comment(lib, "dxguid.lib")
-#pragma comment(lib, "dxcompiler.lib")
-#include "externals/imgui/imgui.h"
+
 #include "externals/imgui/imgui_impl_dx12.h"
 #include "externals/imgui/imgui_impl_win32.h"
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-#include "externals/DirectXTex/DirectXTex.h"
-#include "externals/DirectXTex/d3dx12.h"
-
-#include <fstream>
-#include <sstream>
 
 #include "Vector2.h"
 #include "Vector3.h"
@@ -33,7 +13,6 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "TransformStructure.h"
 #include "MaterialData.h"
 #include "DirectionalLightData.h"
-#include <wrl.h>
 
 //クラス化
 #include "WinApp.h"
@@ -223,7 +202,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//出力ウインドウへの文字出力
 	OutputDebugStringA("Hello,DirectX!\n");
-
 
 	//色々な解放処理の前に書く
 	ImGui_ImplDX12_Shutdown();
