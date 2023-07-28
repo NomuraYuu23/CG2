@@ -261,7 +261,7 @@ Sprite::Sprite(
 
 	textureHandle_ = textureHandle;
 	//CPUで動かす用のTransformを作る
-	transformSprite = { scale, rotate, position };
+	transform_ = { scale, rotate, position };
 	//大きさ
 	size_ = size;
 
@@ -345,7 +345,7 @@ bool Sprite::Initialize() {
 	transformationMatrixMap->WVP = MakeIdentity4x4();
 
 	//CPUで動かす用のTransformを作る
-	transformSprite = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+	transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
 
 
 	/*
@@ -379,10 +379,10 @@ bool Sprite::Initialize() {
 /// </summary>
 void Sprite::Update() {
 
-	transformSprite = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+	transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
 
 	//Sprite用のWorldViewProjectionMatrixを作る
-	Matrix4x4 WorldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
+	Matrix4x4 WorldMatrixSprite = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
 	Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
 	Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kWindowWidth), float(WinApp::kWindowHeight), 0.0f, 100.0f);
 	Matrix4x4 worldViewProjectionMatrixSprite = Multiply(WorldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));

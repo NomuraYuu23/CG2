@@ -14,30 +14,15 @@
 #include "Vector4.h"
 #include "Matrix4x4.h"
 
+#include "VertexData.h"
+#include "TransformationMatrix.h"
+#include "TransformStructure.h"
+
 /// <summary>
 /// スプライト
 /// </summary>
 class Sprite
 {
-public:
-
-	struct VertexData {
-
-		Vector4 position;
-		Vector2 texcoord;
-		Vector3 normal;
-
-	};
-	struct TransformationMatrix {
-		Matrix4x4 WVP;
-		Matrix4x4 World;
-	};
-	//Transform構造体
-	struct TransformStructure {
-		Vector3 scale;
-		Vector3 rotate;
-		Vector3 translate;
-	};
 
 public:
 
@@ -140,7 +125,7 @@ private:
 	TransformationMatrix* transformationMatrixMap = nullptr;
 
 	//CPUで動かす用のTransformを作る
-	TransformStructure transformSprite;
+	TransformStructure transform_;
 
 
 	//テクスチャ番号

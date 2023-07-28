@@ -15,18 +15,14 @@
 #include "Vector4.h"
 #include "Matrix4x4.h"
 
+#include "VertexData.h"
+#include "TransformationMatrix.h"
+#include "TransformStructure.h"
+
 class Model
 {
 
 public:
-
-	struct VertexData {
-
-		Vector4 position;
-		Vector2 texcoord;
-		Vector3 normal;
-
-	};
 
 	struct MaterialData {
 		std::string textureFilePath;
@@ -38,18 +34,6 @@ public:
 		MaterialData material;
 	
 	};
-
-	struct TransformationMatrix {
-		Matrix4x4 WVP;
-		Matrix4x4 World;
-	};
-	//Transform構造体
-	struct TransformStructure {
-		Vector3 scale;
-		Vector3 rotate;
-		Vector3 translate;
-	};
-
 
 	/// <summary>
 	/// 静的初期化
@@ -124,6 +108,11 @@ public:
 	void Initialize(const std::string& directoryPath, const std::string& filename, DirectXCommon* dxCommon);
 
 	/// <summary>
+	/// 更新
+	/// </summary>
+	void Update(const TransformStructure& transform, const TransformStructure& cameraTransform);
+
+	/// <summary>
 	/// 描画
 	/// </summary>
 	void Draw();
@@ -161,7 +150,7 @@ private:
 	TransformationMatrix* transformationMatrixMap = nullptr;
 
 	//CPUで動かす用のTransformを作る
-	TransformStructure transform;
+	TransformStructure transform_;
 
 	//モデル読み込み
 	Model::ModelData modelData;

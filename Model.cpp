@@ -493,7 +493,26 @@ void Model::Initialize(const std::string& directoryPath, const std::string& file
 	//メッシュ生成
 	CreateMesh(directoryPath, filename);
 
-	textureHandle_ = TextureManager::Load(directoryPath + "/" + filename, dxCommon);
+	textureHandle_ = TextureManager::Load(modelData.material.textureFilePath,dxCommon);
+
+}
+
+/// <summary>
+/// 更新
+/// </summary>
+void Model::Update(const TransformStructure& transform, const TransformStructure& cameraTransform) {
+
+	transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+
+	//回転
+	//transform.rotate.y = 3.5f;
+	Matrix4x4 worldMatrix = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+	Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
+	Matrix4x4 viewMatrix = Inverse(cameraMatrix);
+	Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(WinApp::kWindowWidth) / float(WinApp::kWindowHeight), 0.1f, 100.0f);
+	Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
+	transformationMatrixMap->WVP = worldViewProjectionMatrix;
+	transformationMatrixMap->World = worldMatrix;
 
 }
 
@@ -553,7 +572,7 @@ void Model::CreateMesh(const std::string& directoryPath, const std::string& file
 	transformationMatrixMap->World = MakeIdentity4x4();
 	transformationMatrixMap->WVP = MakeIdentity4x4();
 
-	transform = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+	transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
 
 }
 

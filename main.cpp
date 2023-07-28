@@ -28,6 +28,9 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "Vector3.h"
 #include "Vector4.h"
 #include "Matrix4x4.h"
+#include "VertexData.h"
+#include "TransformationMatrix.h"
+#include "TransformStructure.h"
 #include <wrl.h>
 
 //クラス化
@@ -35,33 +38,14 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "DirectXCommon.h"
 #include "TextureManager.h"
 #include "Sprite.h"
+#include "Model.h"
 
-
-struct VertexData {
-
-	Vector4 position;
-	Vector2 texcoord;
-	Vector3 normal;
-
-};
-
-//Transform構造体
-struct TransformStructure {
-	Vector3 scale;
-	Vector3 rotate;
-	Vector3 translate;
-};
 
 struct Material {
 	Vector4 color;
 	int32_t enableLighting;
 	float padding[3];
 	Matrix4x4 uvTransform;
-};
-
-struct TransformationMatrix {
-	Matrix4x4 WVP;
-	Matrix4x4 World;
 };
 
 struct DirectionalLight {
@@ -500,6 +484,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// スプライト静的初期化
 	Sprite::StaticInitialize(dxCommon->GetDevice());
 
+	// モデル静的初期化
+	Model::StaticInitialize(dxCommon->GetDevice());
 
 	D3DResourceLeakChecker leakChecker;
 
@@ -718,6 +704,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Sprite::Create(
 			textureHandle,Vector3(1.0f,1.0f,1.0f), Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)));
 
+	// モデル
+	std::unique_ptr<Model> model;
+
+	model.reset(Model::Create("resources", "axis.obj", dxCommon));
+
 
 	//平行光源リソースを作る
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource = CreateBufferResource(dxCommon->GetDevice(), sizeof(DirectionalLight));
@@ -836,6 +827,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		sprite->Update();
 
+		model->Update(transform, cameraTransform);
 
 		//ImGuiの内部コマンドを生成する
 		//ImGui::Render();
@@ -862,6 +854,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 #pragma endregion
 
+		/*
 
 		//RootSignatureを設定。
 		dxCommon->GetCommadList()->SetPipelineState(graphicsPipelineState.Get());//PS0を設定
@@ -889,6 +882,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		dxCommon->GetCommadList()->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
 		//dxCommon->GetCommadList()->DrawIndexedInstanced(UINT(modelData.vertices.size()), 1, 0, 0, 0);
 		
+		*/
+
+		//光源
+		dxCommon->GetCommadList()->SetGraphicsRootConstantBufferView(3, directionalLightResource->GetGPUVirtualAddress());
+
+		Model::PreDraw(dxCommon->GetCommadList());
+
+		//マテリアルCBufferの場所を設定
+		dxCommon->GetCommadList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
+		model->Draw();
+
+		Model::PostDraw();
 
 		//実際のcommandListのImGuiの描画コマンドを積む
 		//ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->GetCommadList());
