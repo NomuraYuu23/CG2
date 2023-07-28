@@ -376,9 +376,10 @@ void Material::Update(const TransformStructure& transform, const Vector4& color,
 	uvTransform = transform;
 
 	//UVTransfome用
-	Matrix4x4 uvTransformMatrix = MakeScaleMatrix(uvTransform.scale);
+	Matrix4x4 uvTransformMatrix = MakeAffineMatrix(uvTransform.scale, uvTransform.rotate, uvTransform.translate);
+	/*MakeScaleMatrix(uvTransform.scale);
 	uvTransformMatrix = Multiply(uvTransformMatrix, MakeRotateZMatrix(uvTransform.rotate.z));
-	uvTransformMatrix = Multiply(uvTransformMatrix, MakeTranslateMatrix(uvTransform.translate));
+	uvTransformMatrix = Multiply(uvTransformMatrix, MakeTranslateMatrix(uvTransform.translate));*/
 	materialMap->uvTransform = uvTransformMatrix;
 
 	materialMap->color = color;

@@ -24,7 +24,12 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "DirectionalLight.h"
 #include "D3DResourceLeakChecker.h"
 
+enum Mode
+{
+	none = 0,
+	colorChange = 1
 
+};
 
 //Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -124,6 +129,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	*/
 
+
+	// モード1
+
 	//テクスチャ
 	uint32_t textureHandle = TextureManager::Load("resources/uvChecker.png", dxCommon);
 
@@ -144,6 +152,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Sprite::Create(
 			textureHandle, transformSprite, materialSprite.get()));
 
+	Vector4 colorSprite = { 1.0f,1.0f,1.0f,1.0f };
+
 
 	//ウィンドウののボタンが押されるまでループ
 	while (true) {
@@ -159,9 +169,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 
+		ImGui::DragFloat3("uvTransform.translate", &uvTransformSprite.translate.x);
+		ImGui::DragFloat3("uvTransform.rotate", &uvTransformSprite.rotate.x);
+		ImGui::DragFloat3("uvTransform.scale", &uvTransformSprite.scale.x);
+		ImGui::ColorEdit4("color", &colorSprite.x);
+
 		//開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
 		ImGui::ShowDemoWindow();
-
 
 		/*
 		sprite->Update(transformSprite);
@@ -175,6 +189,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		*/
 
+		materialSprite->Update(uvTransformSprite, colorSprite, false);
 		sprite->Update(transformSprite);
 
 		//ImGuiの内部コマンドを生成する
