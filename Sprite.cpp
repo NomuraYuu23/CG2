@@ -220,7 +220,7 @@ void Sprite::PostDraw() {
 /// <param name="isFlipY">上下反転</param>
 /// <returns>生成されたスプライト</returns>
 Sprite* Sprite::Create(
-	uint32_t textureHandle, const Vector3& scale, const Vector3& rotate, const Vector3& position) {
+	uint32_t textureHandle, const TransformStructure& transform, Material* material) {
 
 	// 仮サイズ
 	Vector2 size = { 100.0f, 100.0f };
@@ -231,7 +231,7 @@ Sprite* Sprite::Create(
 	size = { (float)resDesc.Width, (float)resDesc.Height };
 
 	// Spriteのインスタンスを生成
-	Sprite* sprite = new Sprite(textureHandle, scale, rotate, position, size);
+	Sprite* sprite = new Sprite(textureHandle, transform, size, material);
 	if (sprite == nullptr) {
 		return nullptr;
 	}
@@ -256,14 +256,17 @@ Sprite::Sprite() {}
 /// コンストラクタ
 /// </summary>
 Sprite::Sprite(
-	uint32_t textureHandle, const Vector3& scale, const Vector3& rotate, const Vector3& position, const Vector2& size ) {
+	uint32_t textureHandle, const TransformStructure& transform, const Vector2& size, Material* material) {
 
 
 	textureHandle_ = textureHandle;
 	//CPUで動かす用のTransformを作る
-	transform_ = { scale, rotate, position };
+	transform_ = transform;
 	//大きさ
 	size_ = size;
+
+	// マテリアル
+	material_ = material;
 
 }
 
@@ -347,29 +350,6 @@ bool Sprite::Initialize() {
 	//CPUで動かす用のTransformを作る
 	transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
 
-
-	/*
-	//Sprite用のマテリアルリソースを作る
-	Microsoft::WRL::ComPtr<ID3D12Resource> materialResourceSprite = CreateBufferResource(dxCommon->GetDevice(), sizeof(Material));
-	//マテリアルにデータを書き込む
-	Material* materialDataSprite = nullptr;
-	//書き込むためのアドレスを取得
-	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&materialDataSprite));
-	//白を書き込んでみる
-	materialDataSprite->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	//SpriteはLightingしないのでfalseを設定する
-	materialDataSprite->enableLighting = false;	//UVTransfome初期化
-	materialDataSprite->uvTransform = MakeIdentity4x4();
-
-	TransformStructure uvTransformSprite{
-		{1.0f,1.0f,1.0f},
-		{0.0f,0.0f,0.0f},
-		{0.0f,0.0f,0.0f},
-	};
-
-	*/
-
-
 	return true;
 
 }
@@ -377,9 +357,9 @@ bool Sprite::Initialize() {
 /// <summary>
 /// 更新
 /// </summary>
-void Sprite::Update() {
+void Sprite::Update(const TransformStructure& transform) {
 
-	transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+	transform_ = transform;
 
 	//Sprite用のWorldViewProjectionMatrixを作る
 	Matrix4x4 WorldMatrixSprite = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
@@ -413,11 +393,12 @@ void Sprite::Draw() {
 	sCommandList->IASetVertexBuffers(0, 1, &vbView_);
 	//IBVを設定
 	sCommandList->IASetIndexBuffer(&ibView_);
-	//マテリアルCBufferの場所を設定
-	//sCommandList->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
 
 	//TransformationMatrixCBufferの場所を設定
 	sCommandList->SetGraphicsRootConstantBufferView(1, transformationMatrixBuff_->GetGPUVirtualAddress());
+
+	//マテリアルCBufferの場所を設定
+	sCommandList->SetGraphicsRootConstantBufferView(0, material_->GetMaterialBuff()->GetGPUVirtualAddress());
 
 	// シェーダーリソースビューをセット
 	TextureManager::GetInstance()->SetGraphicsRootDescriptorTable(sCommandList, 2, textureHandle_);

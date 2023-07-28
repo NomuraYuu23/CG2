@@ -66,14 +66,14 @@ void Model::PostDraw() {
 /// 3Dモデル生成
 /// </summary>
 /// <returns></returns>
-Model* Model::Create(const std::string& directoryPath, const std::string& filename, DirectXCommon* dxCommon) {
+Model* Model::Create(const std::string& directoryPath, const std::string& filename, DirectXCommon* dxCommon, Material* material) {
 
 	// 3Dオブジェクトのインスタンスを生成
 	Model* object3d = new Model();
 	assert(object3d);
 
 	// 初期化
-	object3d->Initialize(directoryPath, filename, dxCommon);
+	object3d->Initialize(directoryPath, filename, dxCommon, material);
 
 	return object3d;
 
@@ -485,7 +485,7 @@ Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std:
 /// <summary>
 /// 初期化
 /// </summary>
-void Model::Initialize(const std::string& directoryPath, const std::string& filename, DirectXCommon* dxCommon) {
+void Model::Initialize(const std::string& directoryPath, const std::string& filename, DirectXCommon* dxCommon, Material* material) {
 
 	assert(sDevice);
 
@@ -495,6 +495,8 @@ void Model::Initialize(const std::string& directoryPath, const std::string& file
 	CreateMesh(directoryPath, filename);
 
 	textureHandle_ = TextureManager::Load(modelData.material.textureFilePath,dxCommon);
+
+	material_ = material;
 
 }
 
@@ -531,13 +533,14 @@ void Model::Draw(){
 	//wvp用のCBufferの場所を設定
 	sCommandList->SetGraphicsRootConstantBufferView(1, transformationMatrixBuff_->GetGPUVirtualAddress());
 	
+	//マテリアルCBufferの場所を設定
+	sCommandList->SetGraphicsRootConstantBufferView(0, material_->GetMaterialBuff()->GetGPUVirtualAddress());
+
 	//SRVのDescriptorTableの先頭を設定。2はrootParamenter[2]である
 	TextureManager::GetInstance()->SetGraphicsRootDescriptorTable(sCommandList, 2, textureHandle_);
 
-
 	//描画
 	sCommandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
-	//dxCommon->GetCommadList()->DrawIndexedInstanced(UINT(modelData.vertices.size()), 1, 0, 0, 0);
 
 }
 

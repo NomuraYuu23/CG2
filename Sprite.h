@@ -18,6 +18,8 @@
 #include "TransformationMatrix.h"
 #include "TransformStructure.h"
 
+#include "Material.h"
+
 /// <summary>
 /// スプライト
 /// </summary>
@@ -51,7 +53,7 @@ public:
 
 	/// <returns>生成されたスプライト</returns>
 	static Sprite* Create(
-		uint32_t textureHandle, const Vector3& scale, const Vector3& rotate, const Vector3& position);
+		uint32_t textureHandle, const TransformStructure& transform, Material* material);
 
 private:
 
@@ -77,7 +79,7 @@ public:
 	/// コンストラクタ
 	/// </summary>
 	Sprite(
-		uint32_t textureHandle, const Vector3& scale, const Vector3& rotate, const Vector3& position, const Vector2& size);
+		uint32_t textureHandle, const TransformStructure& transform, const Vector2& size, Material* material);
 
 	/// <summary>
 	/// 初期化
@@ -88,7 +90,7 @@ public:
 	/// <summary>
 	/// 更新
 	/// </summary>
-	void Update();
+	void Update(const TransformStructure& transform);
 
 	/// <summary>
 	/// テクスチャハンドルの設定
@@ -134,6 +136,9 @@ private:
 	D3D12_RESOURCE_DESC resourceDesc_;
 	// サイズ
 	Vector2 size_;
+
+	// マテリアル
+	Material* material_ = nullptr;
 
 
 private:

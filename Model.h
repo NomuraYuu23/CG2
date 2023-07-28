@@ -19,6 +19,8 @@
 #include "TransformationMatrix.h"
 #include "TransformStructure.h"
 
+#include "Material.h"
+
 class Model
 {
 
@@ -56,7 +58,7 @@ public:
 	/// 3Dモデル生成
 	/// </summary>
 	/// <returns></returns>
-	static Model* Create(const std::string& directoryPath, const std::string& filename, DirectXCommon* dxCommon);
+	static Model* Create(const std::string& directoryPath, const std::string& filename, DirectXCommon* dxCommon, Material* material);
 
 private:
 
@@ -105,7 +107,7 @@ public:
 	/// <summary>
 	/// 初期化
 	/// </summary>
-	void Initialize(const std::string& directoryPath, const std::string& filename, DirectXCommon* dxCommon);
+	void Initialize(const std::string& directoryPath, const std::string& filename, DirectXCommon* dxCommon, Material* material);
 
 	/// <summary>
 	/// 更新
@@ -159,6 +161,9 @@ private:
 	UINT textureHandle_ = 0;
 	// リソース設定
 	D3D12_RESOURCE_DESC resourceDesc_;
+
+	// マテリアル
+	Material* material_ = nullptr;
 
 
 };

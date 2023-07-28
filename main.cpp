@@ -528,36 +528,29 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//const float kLonEvery = 2.0f * float(std::numbers::pi) / float(kSubdivision);//経度分割1つ分の角度
 	//const float kLatEvery = float(std::numbers::pi) / float(kSubdivision);//緯度分割1つ分の角度
 
-	//CPUで動かす用のTransformを作る
-	TransformStructure transformSphere{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+
+	TransformStructure uvTransformSprite{
+		{1.0f,1.0f,1.0f},
+		{0.0f,0.0f,0.0f},
+		{0.0f,0.0f,0.0f},
+	};
+
+	TransformStructure uvTransform{
+	{1.0f,1.0f,1.0f},
+	{0.0f,0.0f,0.0f},
+	{0.0f,0.0f,0.0f},
+	};
+
+	//Transform変数を作る
+	TransformStructure transform{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+	//Transform変数を作る
+	TransformStructure transformSprite{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+	//Transform変数を作る(カメラ)
+	TransformStructure cameraTransform{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -10.0f} };
+
 
 	//テクスチャ
 	uint32_t textureHandle = TextureManager::Load("resources/uvChecker.png", dxCommon);
-
-	// スプライト
-	std::unique_ptr<Sprite> sprite;
-
-	sprite.reset(
-		Sprite::Create(
-			textureHandle,Vector3(1.0f,1.0f,1.0f), Vector3(0.0f, 0.0f, 0.0f), Vector3(0.0f, 0.0f, 0.0f)));
-
-	// モデル
-	std::unique_ptr<Model> model;
-
-	model.reset(Model::Create("resources", "axis.obj", dxCommon));
-
-
-	//平行光源リソースを作る
-	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource = CreateBufferResource(dxCommon->GetDevice(), sizeof(DirectionalLight));
-	//データを書き込む
-	DirectionalLight* directionalLightData = nullptr;
-	//書き込むためのアドレスを取得
-	directionalLightResource->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData));
-
-	//デフォルト値
-	directionalLightData->color = { 1.0f,1.0f,1.0f,1.0f };
-	directionalLightData->direction = { 0.0f, -1.0f, 0.0f };
-	directionalLightData->intencity = 1.0f;
 
 	// マテリアル
 	std::unique_ptr<Material> material;
@@ -572,6 +565,30 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Material::Create()
 	);
 
+	// スプライト
+	std::unique_ptr<Sprite> sprite;
+
+	sprite.reset(
+		Sprite::Create(
+			textureHandle, transformSprite, materialSprite.get()));
+
+	// モデル
+	std::unique_ptr<Model> model;
+
+	model.reset(Model::Create("resources", "axis.obj", dxCommon, material.get()));
+
+
+	//平行光源リソースを作る
+	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource = CreateBufferResource(dxCommon->GetDevice(), sizeof(DirectionalLight));
+	//データを書き込む
+	DirectionalLight* directionalLightData = nullptr;
+	//書き込むためのアドレスを取得
+	directionalLightResource->Map(0, nullptr, reinterpret_cast<void**>(&directionalLightData));
+
+	//デフォルト値
+	directionalLightData->color = { 1.0f,1.0f,1.0f,1.0f };
+	directionalLightData->direction = { 0.0f, -1.0f, 0.0f };
+	directionalLightData->intencity = 1.0f;
 
 	/*
 
@@ -601,24 +618,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	materialDataSprite->uvTransform = MakeIdentity4x4();
 
 	*/
-
-
-
-	TransformStructure uvTransformSprite{
-		{1.0f,1.0f,1.0f},
-		{0.0f,0.0f,0.0f},
-		{0.0f,0.0f,0.0f},
-	};
-	TransformStructure uvTransform{
-	{1.0f,1.0f,1.0f},
-	{0.0f,0.0f,0.0f},
-	{0.0f,0.0f,0.0f},
-	};
-
-	//Transform変数を作る
-	TransformStructure transform{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
-	//Transform変数を作る(カメラ)
-	TransformStructure cameraTransform{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -10.0f} };
 
 	/*
 	
@@ -669,7 +668,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		
 		*/
 
-		sprite->Update();
+		sprite->Update(transformSprite);
 
 		model->Update(transform, cameraTransform);
 
@@ -686,12 +685,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		// 背景スプライト描画前処理
 		Sprite::PreDraw(dxCommon->GetCommadList());
 
-
-
-		dxCommon->GetCommadList()->SetGraphicsRootConstantBufferView(0, materialSprite->GetMaterialBuff()->GetGPUVirtualAddress());
 		//背景スプライト描画
 		sprite->Draw();
-
 
 		// スプライト描画後処理
 		Sprite::PostDraw();
@@ -706,8 +701,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		Model::PreDraw(dxCommon->GetCommadList());
 
-		//マテリアルCBufferの場所を設定
-		dxCommon->GetCommadList()->SetGraphicsRootConstantBufferView(0, material->GetMaterialBuff()->GetGPUVirtualAddress());
 		model->Draw();
 
 		Model::PostDraw();
