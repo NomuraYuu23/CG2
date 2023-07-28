@@ -522,12 +522,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		IID_PPV_ARGS(&graphicsPipelineState));
 	assert(SUCCEEDED(hr));
 
-	///
-
 	//const uint32_t kSubdivision = 16; //分割数
 	//const float kLonEvery = 2.0f * float(std::numbers::pi) / float(kSubdivision);//経度分割1つ分の角度
 	//const float kLatEvery = float(std::numbers::pi) / float(kSubdivision);//緯度分割1つ分の角度
-
 
 	TransformStructure uvTransformSprite{
 		{1.0f,1.0f,1.0f},
@@ -548,35 +545,29 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//Transform変数を作る(カメラ)
 	TransformStructure cameraTransform{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -10.0f} };
 
-
 	//テクスチャ
 	uint32_t textureHandle = TextureManager::Load("resources/uvChecker.png", dxCommon);
 
 	// マテリアル
 	std::unique_ptr<Material> material;
-
 	material.reset(
 		Material::Create()
 	);
 
 	std::unique_ptr<Material> materialSprite;
-
 	materialSprite.reset(
 		Material::Create()
 	);
 
 	// スプライト
 	std::unique_ptr<Sprite> sprite;
-
 	sprite.reset(
 		Sprite::Create(
 			textureHandle, transformSprite, materialSprite.get()));
 
 	// モデル
 	std::unique_ptr<Model> model;
-
 	model.reset(Model::Create("resources", "axis.obj", dxCommon, material.get()));
-
 
 	//平行光源リソースを作る
 	Microsoft::WRL::ComPtr<ID3D12Resource> directionalLightResource = CreateBufferResource(dxCommon->GetDevice(), sizeof(DirectionalLight));
@@ -589,35 +580,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	directionalLightData->color = { 1.0f,1.0f,1.0f,1.0f };
 	directionalLightData->direction = { 0.0f, -1.0f, 0.0f };
 	directionalLightData->intencity = 1.0f;
-
-	/*
-
-	//マテリアル用のリソースを作る。今回はcolor1つ分のサイズを用意する
-	Microsoft::WRL::ComPtr<ID3D12Resource> materialResource = CreateBufferResource(dxCommon->GetDevice(), sizeof(Material));
-	//マテリアルにデータを書き込む
-	Material* materialData = nullptr;
-	//書き込むためのアドレスを取得
-	materialResource->Map(0, nullptr, reinterpret_cast<void**>(&materialData));
-	//白を書き込んでみる
-	materialData->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	//Lightingしないのでfalseを設定する
-	materialData->enableLighting = true;
-	//UVTransfome初期化
-	materialData->uvTransform = MakeIdentity4x4();
-
-	//Sprite用のマテリアルリソースを作る
-	Microsoft::WRL::ComPtr<ID3D12Resource> materialResourceSprite = CreateBufferResource(dxCommon->GetDevice(), sizeof(Material));
-	//マテリアルにデータを書き込む
-	Material* materialDataSprite = nullptr;
-	//書き込むためのアドレスを取得
-	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&materialDataSprite));
-	//白を書き込んでみる
-	materialDataSprite->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	//SpriteはLightingしないのでfalseを設定する
-	materialDataSprite->enableLighting = false;	//UVTransfome初期化
-	materialDataSprite->uvTransform = MakeIdentity4x4();
-
-	*/
 
 	/*
 	
@@ -656,16 +618,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
 		ImGui::ShowDemoWindow();
 
-		*/
-
-		/*
-
-		//UVTransfome用
-		Matrix4x4 uvTransformMatrix = MakeScaleMatrix(uvTransformSprite.scale);
-		uvTransformMatrix = Multiply(uvTransformMatrix, MakeRotateZMatrix(uvTransformSprite.rotate.z));
-		uvTransformMatrix = Multiply(uvTransformMatrix, MakeTranslateMatrix(uvTransformSprite.translate));
-		materialDataSprite->uvTransform = uvTransformMatrix;
-		
 		*/
 
 		sprite->Update(transformSprite);
