@@ -1,32 +1,87 @@
-#include "Sprite.h"
+#include "Model.h"
 #include "TextureManager.h"
 #include "WinApp.h"
 #include <cassert>
+
+#include <fstream>
+#include <sstream>
 
 using namespace DirectX;
 using namespace Microsoft::WRL;
 
 // デバイス
-ID3D12Device* Sprite::sDevice = nullptr;
+ID3D12Device* Model::sDevice = nullptr;
 // ディスクリプタサイズ
-UINT Sprite::sDescriptorHandleIncrementSize;
+UINT Model::sDescriptorHandleIncrementSize;
 // コマンドリスト
-ID3D12GraphicsCommandList* Sprite::sCommandList = nullptr;
+ID3D12GraphicsCommandList* Model::sCommandList = nullptr;
 // ルートシグネチャ
-ComPtr<ID3D12RootSignature> Sprite::sRootSignature;
+ComPtr<ID3D12RootSignature> Model::sRootSignature;
 // パイプラインステートオブジェクト
-ComPtr<ID3D12PipelineState> Sprite::sPipelineState;
+ComPtr<ID3D12PipelineState> Model::sPipelineState;
 
 /// <summary>
 /// 静的初期化
 /// </summary>
 /// <param name="device">デバイス</param>
-void Sprite::StaticInitialize(
+void Model::StaticInitialize(
 	ID3D12Device* device) {
 
 	assert(device);
-	
+
 	sDevice = device;
+	// グラフィックパイプライン生成
+	InitializeGraphicsPipeline();
+
+}
+
+/// <summary>
+/// 静的前処理
+/// </summary>
+/// <param name="cmdList">描画コマンドリスト</param>
+void Model::PreDraw(ID3D12GraphicsCommandList* cmdList) {
+
+	assert(Model::sCommandList == nullptr);
+
+	sCommandList = cmdList;
+
+	//RootSignatureを設定。
+	sCommandList->SetPipelineState(sPipelineState.Get());//PS0を設定
+	sCommandList->SetGraphicsRootSignature(sRootSignature.Get());
+	//形状を設定。PS0に設定しているものとは別。
+	sCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+}
+
+/// <summary>
+/// 描画後処理
+/// </summary>
+void Model::PostDraw() {
+	// コマンドリストを解除
+	sCommandList = nullptr;
+}
+
+/// <summary>
+/// 3Dモデル生成
+/// </summary>
+/// <returns></returns>
+Model* Model::Create(const std::string& directoryPath, const std::string& filename, DirectXCommon* dxCommon) {
+
+	// 3Dオブジェクトのインスタンスを生成
+	Model* object3d = new Model();
+	assert(object3d);
+
+	// 初期化
+	object3d->Initialize(directoryPath, filename, dxCommon);
+
+	return object3d;
+
+}
+
+/// <summary>
+/// グラフィックパイプライン生成
+/// </summary>
+void Model::InitializeGraphicsPipeline() {
 
 	sDescriptorHandleIncrementSize = sDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
@@ -182,253 +237,14 @@ void Sprite::StaticInitialize(
 
 }
 
-/// <summary>
-/// 静的前処理
-/// </summary>
-/// <param name="cmdList">描画コマンドリスト</param>
-void Sprite::PreDraw(ID3D12GraphicsCommandList* cmdList) {
 
-	assert(Sprite::sCommandList == nullptr);
-
-	sCommandList = cmdList;
-
-	//RootSignatureを設定。
-	sCommandList->SetPipelineState(sPipelineState.Get());//PS0を設定
-	sCommandList->SetGraphicsRootSignature(sRootSignature.Get());
-	//形状を設定。PS0に設定しているものとは別。
-	sCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-}
-
-/// <summary>
-/// 描画後処理
-/// </summary>
-void Sprite::PostDraw() {
-	//コマンドリストを解除
-	Sprite::sCommandList = nullptr;
-
-}
-
-/// <summary>
-/// スプライト生成
-/// </summary>
-/// <param name="textureHandle">テクスチャハンドル</param>
-/// <param name="position">座標</param>
-/// <param name="color">色</param>
-/// <param name="anchorpoint">アンカーポイント</param>
-/// <param name="isFlipX">左右反転</param>
-/// <param name="isFlipY">上下反転</param>
-/// <returns>生成されたスプライト</returns>
-Sprite* Sprite::Create(
-	uint32_t textureHandle, const Vector3& scale, const Vector3& rotate, const Vector3& position) {
-
-	// 仮サイズ
-	Vector2 size = { 100.0f, 100.0f };
-
-	// テクスチャ情報取得
-	const D3D12_RESOURCE_DESC& resDesc = TextureManager::GetInstance()->GetResourceDesc(textureHandle);
-	// スプライトのサイズをテクスチャのサイズに設定
-	size = { (float)resDesc.Width, (float)resDesc.Height };
-
-	// Spriteのインスタンスを生成
-	Sprite* sprite = new Sprite(textureHandle, scale, rotate, position, size);
-	if (sprite == nullptr) {
-		return nullptr;
-	}
-
-	// 初期化
-	if (!sprite->Initialize()) {
-		delete sprite;
-		assert(0);
-		return nullptr;
-	}
-
-	return sprite;
-
-}
-
-/// <summary>
-/// コンストラクタ
-/// </summary>
-Sprite::Sprite() {}
-
-/// <summary>
-/// コンストラクタ
-/// </summary>
-Sprite::Sprite(
-	uint32_t textureHandle, const Vector3& scale, const Vector3& rotate, const Vector3& position, const Vector2& size ) {
-
-
-	textureHandle_ = textureHandle;
-	//CPUで動かす用のTransformを作る
-	transformSprite = { scale, rotate, position };
-	//大きさ
-	size_ = size;
-
-}
-
-/// <summary>
-/// 初期化
-/// </summary>
-/// <returns>成否</returns>
-bool Sprite::Initialize() {
-
-	assert(sDevice);
-
-	//HRESULT hr;
-
-	resourceDesc_ = TextureManager::GetInstance()->GetResourceDesc(textureHandle_);
-
-	//Sprite用の頂点リソースを作る
-	vertBuff_ = CreateBufferResource(sDevice, sizeof(VertexData) * 6);
-
-	//リソースの先頭のアドレスから使う
-	vbView_.BufferLocation = vertBuff_->GetGPUVirtualAddress();
-	//使用するリソースのサイズは頂点6つ分のサイズ
-	vbView_.SizeInBytes = sizeof(VertexData) * 6;
-	//1頂点あたりのサイズ
-	vbView_.StrideInBytes = sizeof(VertexData);
-
-	//書き込むためのアドレスを取得
-	vertBuff_->Map(0, nullptr, reinterpret_cast<void**>(&vertMap));
-
-	//インデックスリソースを作る
-	indexBuff_ = CreateBufferResource(sDevice, sizeof(uint32_t) * 6);
-
-	//インデックスバッファビュー
-	//リソースの先頭のアドレスから使う
-	ibView_.BufferLocation = indexBuff_->GetGPUVirtualAddress();
-	//使用するリソースのサイズはインデックス6つ分のサイズ
-	ibView_.SizeInBytes = sizeof(uint32_t) * 6;
-	//インデックスはuint32_tとする
-	ibView_.Format = DXGI_FORMAT_R32_UINT;
-
-	//インデックスリソースにデータを書き込む
-	indexBuff_->Map(0, nullptr, reinterpret_cast<void**>(&indexMap));
-
-	//一枚目の三角形
-	vertMap[0].position = { 0.0f, size_.y, 0.0f, 1.0f };//左下
-	vertMap[0].texcoord = { 0.0f, 1.0f };
-	vertMap[0].normal = { 0.0f, 0.0f, -1.0f };
-	vertMap[1].position = { 0.0f, 0.0f, 0.0f, 1.0f };//左上
-	vertMap[1].texcoord = { 0.0f, 0.0f };
-	vertMap[1].normal = { 0.0f, 0.0f, -1.0f };
-	vertMap[2].position = { size_.x, size_.y, 0.0f, 1.0f };//右下
-	vertMap[2].texcoord = { 1.0f, 1.0f };
-	vertMap[2].normal = { 0.0f, 0.0f, -1.0f };
-	//ニ枚目の三角形
-	vertMap[3].position = { size_.x, 0.0f, 0.0f, 1.0f };//右上
-	vertMap[3].texcoord = { 1.0f, 0.0f };
-	vertMap[3].normal = { 0.0f, 0.0f, -1.0f };
-	vertMap[4].position = { 0.0f, 0.0f, 0.0f, 1.0f };//左上
-	vertMap[4].texcoord = { 0.0f, 0.0f };
-	vertMap[4].normal = { 0.0f, 0.0f, -1.0f };
-	vertMap[5].position = { size_.x, size_.y, 0.0f, 1.0f };//右下
-	vertMap[5].texcoord = { 1.0f, 1.0f };
-	vertMap[5].normal = { 0.0f, 0.0f, -1.0f };
-
-	//インデックスリソースにデータを書き込む
-	indexMap[0] = 0;
-	indexMap[1] = 1;
-	indexMap[2] = 2;
-	indexMap[3] = 1;
-	indexMap[4] = 3;
-	indexMap[5] = 2;
-
-	//Sprite用のTransformationMatrix用のリソースを作る。Matrix4x4 1つ分のサイズ
-	transformationMatrixBuff_ = CreateBufferResource(sDevice, sizeof(TransformationMatrix));
-
-	//書き込むためのアドレスを取得
-	transformationMatrixBuff_->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixMap));
-	//単位行列を書き込んでおく
-	transformationMatrixMap->World = MakeIdentity4x4();
-	transformationMatrixMap->WVP = MakeIdentity4x4();
-
-	//CPUで動かす用のTransformを作る
-	transformSprite = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
-
-
-	/*
-	//Sprite用のマテリアルリソースを作る
-	Microsoft::WRL::ComPtr<ID3D12Resource> materialResourceSprite = CreateBufferResource(dxCommon->GetDevice(), sizeof(Material));
-	//マテリアルにデータを書き込む
-	Material* materialDataSprite = nullptr;
-	//書き込むためのアドレスを取得
-	materialResourceSprite->Map(0, nullptr, reinterpret_cast<void**>(&materialDataSprite));
-	//白を書き込んでみる
-	materialDataSprite->color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	//SpriteはLightingしないのでfalseを設定する
-	materialDataSprite->enableLighting = false;	//UVTransfome初期化
-	materialDataSprite->uvTransform = MakeIdentity4x4();
-
-	TransformStructure uvTransformSprite{
-		{1.0f,1.0f,1.0f},
-		{0.0f,0.0f,0.0f},
-		{0.0f,0.0f,0.0f},
-	};
-
-	*/
-
-
-	return true;
-
-}
-
-/// <summary>
-/// 更新
-/// </summary>
-void Sprite::Update() {
-
-	transformSprite = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
-
-	//Sprite用のWorldViewProjectionMatrixを作る
-	Matrix4x4 WorldMatrixSprite = MakeAffineMatrix(transformSprite.scale, transformSprite.rotate, transformSprite.translate);
-	Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
-	Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kWindowWidth), float(WinApp::kWindowHeight), 0.0f, 100.0f);
-	Matrix4x4 worldViewProjectionMatrixSprite = Multiply(WorldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
-	transformationMatrixMap->WVP = worldViewProjectionMatrixSprite;
-	transformationMatrixMap->World = WorldMatrixSprite;
-
-}
-
-/// <summary>
-/// テクスチャハンドルの設定
-/// </summary>
-/// <param name="textureHandle"></param>
-void Sprite::SetTextureHandle(uint32_t textureHandle) {
-
-	textureHandle_ = textureHandle;
-	resourceDesc_ = TextureManager::GetInstance()->GetResourceDesc(textureHandle_);
-
-}
-
-
-
-/// <summary>
-/// 描画
-/// </summary>
-void Sprite::Draw() {
-
-	// 頂点バッファの設定
-	sCommandList->IASetVertexBuffers(0, 1, &vbView_);
-	//IBVを設定
-	sCommandList->IASetIndexBuffer(&ibView_);
-	//マテリアルCBufferの場所を設定
-	//sCommandList->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
-
-	//TransformationMatrixCBufferの場所を設定
-	sCommandList->SetGraphicsRootConstantBufferView(1, transformationMatrixBuff_->GetGPUVirtualAddress());
-
-	// シェーダーリソースビューをセット
-	TextureManager::GetInstance()->SetGraphicsRootDescriptorTable(sCommandList, 2, textureHandle_);
-
-	//描画
-	sCommandList->DrawIndexedInstanced(kVertNum, 1, 0, 0, 0);
-
+//ログ
+void Model::Log(const std::string& message) {
+	OutputDebugStringA(message.c_str());
 }
 
 //CompileShader
-IDxcBlob* Sprite::CompileShader(
+IDxcBlob* Model::CompileShader(
 	//CompilerするShanderファイルへのパス
 	const std::wstring& filePath,
 	//Compilenに使用するProfile
@@ -497,13 +313,8 @@ IDxcBlob* Sprite::CompileShader(
 
 }
 
-//ログ
-void Sprite::Log(const std::string& message) {
-	OutputDebugStringA(message.c_str());
-}
-
 //コンバートストリング
-std::wstring Sprite::ConvertString(const std::string& str) {
+std::wstring Model::ConvertString(const std::string& str) {
 	if (str.empty()) {
 		return std::wstring();
 	}
@@ -517,7 +328,7 @@ std::wstring Sprite::ConvertString(const std::string& str) {
 	return result;
 }
 
-std::string Sprite::ConvertString(const std::wstring& str) {
+std::string Model::ConvertString(const std::wstring& str) {
 	if (str.empty()) {
 		return std::string();
 	}
@@ -531,8 +342,9 @@ std::string Sprite::ConvertString(const std::wstring& str) {
 	return result;
 }
 
+
 //Resource作成関数化
-Microsoft::WRL::ComPtr<ID3D12Resource>  Sprite::CreateBufferResource(Microsoft::WRL::ComPtr<ID3D12Device> device, const size_t& sizeInBytes) {
+Microsoft::WRL::ComPtr<ID3D12Resource>  Model::CreateBufferResource(Microsoft::WRL::ComPtr<ID3D12Device> device, const size_t& sizeInBytes) {
 
 	//頂点リソース用のヒープの設定
 	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
@@ -560,3 +372,201 @@ Microsoft::WRL::ComPtr<ID3D12Resource>  Sprite::CreateBufferResource(Microsoft::
 	return vertexResource;
 
 }
+
+Model::MaterialData Model::LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename) {
+
+	//1. 中で必要となる変数
+	MaterialData materialData;//構築するデータMaterialData
+	std::string line;//ファイルから読んだ1行を格納するもの
+
+	//2. ファイルを開く
+	std::ifstream file(directoryPath + "/" + filename);//ファイルを開く
+	assert(file.is_open());//開けなっかたら止める
+
+	//3. 実際にファイルを読み、MaterialDataを構築していく
+	while (std::getline(file, line)) {
+		std::string identifier;
+		std::istringstream s(line);
+		s >> identifier;
+
+		//identiferに応じた処理
+		if (identifier == "map_Kd") {
+			std::string texturefFilename;
+			s >> texturefFilename;
+			//連結してファイルパスにする
+			materialData.textureFilePath = directoryPath + "/" + texturefFilename;
+		}
+	}
+	//4. MaterialData を返す
+	return materialData;
+
+}
+
+//objファイルを読む
+Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std::string& filename) {
+
+	//1. 変数宣言
+	Model::ModelData modelData; // 構築するModelData
+	std::vector<Vector4> positions; //位置
+	std::vector<Vector3> normals; // 法線
+	std::vector<Vector2> texcoords;  //テクスチャ座標
+	std::string line; // ファイルから読んだ1行を格納するもの
+
+	//2. ファイルを開く
+	std::ifstream file(directoryPath + "/" + filename); //ファイルを開く
+	assert(file.is_open()); //開けなかったら止める
+
+	//3. ファイルを読んでモデルデータを構築
+	while (std::getline(file, line)) {
+		std::string identifier;
+		std::istringstream s(line);
+		s >> identifier;//先頭の識別子を読む
+
+		//identifierに応じた処理
+		if (identifier == "v") {
+			Vector4 position;
+			s >> position.x >> position.y >> position.z;
+			position.w = 1.0f;
+			positions.push_back(position);
+		}
+		else if (identifier == "vt") {
+			Vector2 texcoord;
+			s >> texcoord.x >> texcoord.y;
+			texcoord.y = 1.0f - texcoord.y;
+			texcoords.push_back(texcoord);
+		}
+		else if (identifier == "vn") {
+			Vector3 normal;
+			s >> normal.x >> normal.y >> normal.z;
+			normals.push_back(normal);
+		}
+		else if (identifier == "f") {
+			VertexData triangle[3];
+			//面は三角形限定。その他は未対応
+			for (int32_t faceVertex = 0; faceVertex < 3; ++faceVertex) {
+				std::string vertexDefintion;
+				s >> vertexDefintion;
+				//頂点の要素へのIndexは「位置/UV/法線」で格納されているので、分かいしてIndexを取得する
+				std::istringstream v(vertexDefintion);
+				uint32_t elementIndices[3];
+				for (int32_t element = 0; element < 3; ++element) {
+					std::string index;
+					std::getline(v, index, '/');//区切りでインデックスを読んでいく
+					elementIndices[element] = std::stoi(index);
+				}
+				//要素へのIndexから、実際の要素の値を取得して、頂点を構築する
+				Vector4 position = positions[elementIndices[0] - 1];
+				Vector2 texcoord = texcoords[elementIndices[1] - 1];
+				Vector3 normal = normals[elementIndices[2] - 1];
+				//VertexData vertex = { position, texcoord, normal };
+				//modelData.vertices.push_back(vertex);
+				triangle[faceVertex] = { position, texcoord, normal };
+			}
+			//頂点を逆順で登録することで、回り順を逆にする
+			modelData.vertices.push_back(triangle[2]);
+			modelData.vertices.push_back(triangle[1]);
+			modelData.vertices.push_back(triangle[0]);
+		}
+		else if (identifier == "mtllib") {
+			//materialTemplateLibrayファイルの名前を取得する
+			std::string materialFilename;
+			s >> materialFilename;
+			//基本的にobjファイルを同一階層にmtlは存在させるので、ディレクトリ名とファイル名を渡す
+			modelData.material = LoadMaterialTemplateFile(directoryPath, materialFilename);
+		}
+	}
+
+	return modelData;
+
+}
+
+
+/// <summary>
+/// 初期化
+/// </summary>
+void Model::Initialize(const std::string& directoryPath, const std::string& filename, DirectXCommon* dxCommon) {
+
+	assert(sDevice);
+
+	resourceDesc_ = TextureManager::GetInstance()->GetResourceDesc(textureHandle_);
+
+	//メッシュ生成
+	CreateMesh(directoryPath, filename);
+
+	textureHandle_ = TextureManager::Load(directoryPath + "/" + filename, dxCommon);
+
+}
+
+/// <summary>
+/// 描画
+/// </summary>
+void Model::Draw(){
+
+	// nullptrチェック
+	assert(sDevice);
+	assert(sCommandList);
+	
+	sCommandList->IASetVertexBuffers(0, 1, &vbView_); //VBVを設定
+
+	//wvp用のCBufferの場所を設定
+	sCommandList->SetGraphicsRootConstantBufferView(1, transformationMatrixBuff_->GetGPUVirtualAddress());
+	
+	//SRVのDescriptorTableの先頭を設定。2はrootParamenter[2]である
+	TextureManager::GetInstance()->SetGraphicsRootDescriptorTable(sCommandList, 2, textureHandle_);
+
+
+	//描画
+	sCommandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
+	//dxCommon->GetCommadList()->DrawIndexedInstanced(UINT(modelData.vertices.size()), 1, 0, 0, 0);
+
+}
+
+
+/// <summary>
+/// メッシュデータ生成
+/// </summary>
+void Model::CreateMesh(const std::string& directoryPath, const std::string& filename) {
+
+
+	//モデル読み込み
+	modelData = LoadObjFile(directoryPath, filename);
+
+	vertBuff_ = CreateBufferResource(sDevice, sizeof(VertexData) * modelData.vertices.size());
+
+	//リソースの先頭のアドレスから使う
+	vbView_.BufferLocation = vertBuff_->GetGPUVirtualAddress();
+	//使用するリソースのサイズは頂点3つ分のサイズ
+	vbView_.SizeInBytes = UINT(sizeof(VertexData) * modelData.vertices.size());
+	//1頂点あたりのサイズ
+	vbView_.StrideInBytes = sizeof(VertexData);
+
+	//書き込むためのアドレスを取得
+	vertBuff_->Map(0, nullptr, reinterpret_cast<void**>(&vertMap));
+	//頂点データをリソースにコピー
+	std::memcpy(vertMap, modelData.vertices.data(), sizeof(VertexData) * modelData.vertices.size());
+
+	//WVP用のリソースを作る。Matrix4x4 1つ分のサイズを用意する
+	transformationMatrixBuff_ = CreateBufferResource(sDevice, sizeof(TransformationMatrix));
+	//書き込むためのアドレスを取得
+	transformationMatrixBuff_->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixMap));
+	//単位行列を書き込んでおく
+	transformationMatrixMap->World = MakeIdentity4x4();
+	transformationMatrixMap->WVP = MakeIdentity4x4();
+
+	transform = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+
+}
+
+
+/// <summary>
+/// テクスチャハンドルの設定
+/// </summary>
+/// <param name="textureHandle"></param>
+void Model::SetTextureHandle(uint32_t textureHandle) {
+
+	textureHandle_ = textureHandle;
+	resourceDesc_ = TextureManager::GetInstance()->GetResourceDesc(textureHandle_);
+
+}
+
+

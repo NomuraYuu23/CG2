@@ -498,7 +498,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	TextureManager::GetInstance()->Initialize(dxCommon->GetDevice());
 
 	// スプライト静的初期化
-	Sprite::StaticInitialize(dxCommon->GetDevice(), WinApp::kWindowWidth, WinApp::kWindowHeight);
+	Sprite::StaticInitialize(dxCommon->GetDevice());
 
 
 	D3DResourceLeakChecker leakChecker;
@@ -655,6 +655,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		IID_PPV_ARGS(&graphicsPipelineState));
 	assert(SUCCEEDED(hr));
 
+	///
+
 	const uint32_t kSubdivision = 16; //分割数
 	const float kLonEvery = 2.0f * float(std::numbers::pi) / float(kSubdivision);//経度分割1つ分の角度
 	const float kLatEvery = float(std::numbers::pi) / float(kSubdivision);//緯度分割1つ分の角度
@@ -680,23 +682,28 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//頂点データをリソースにコピー
 	std::memcpy(vertexData, modelData.vertices.data(), sizeof(VertexData)* modelData.vertices.size());
 
-
+	/*
 
 	//Sphere用のインデックスリソースを作る
-	Microsoft::WRL::ComPtr<ID3D12Resource> indexResource = CreateBufferResource(dxCommon->GetDevice(), sizeof(uint32_t) * kSubdivision * kSubdivision * 6);
+	Microsoft::WRL::ComPtr<ID3D12Resource> indexResource = CreateBufferResource(dxCommon->GetDevice(), sizeof(uint32_t) * modelData.vertices.size());
 
 	//インデックスバッファビュー
 	D3D12_INDEX_BUFFER_VIEW indexBufferView{};
 	//リソースの先頭のアドレスから使う
 	indexBufferView.BufferLocation = indexResource->GetGPUVirtualAddress();
 	//使用するリソースのサイズはインデックス6つ分のサイズ
-	indexBufferView.SizeInBytes = sizeof(uint32_t) * kSubdivision * kSubdivision * 6;
+	indexBufferView.SizeInBytes = UINT(sizeof(uint32_t) * modelData.vertices.size());
 	//インデックスはuint32_tとする
 	indexBufferView.Format = DXGI_FORMAT_R32_UINT;
 
 	//インデックスリソースにデータを書き込む
 	uint32_t* indexData = nullptr;
 	indexResource->Map(0, nullptr, reinterpret_cast<void**>(&indexData));
+
+	std::memcpy(indexData, modelData.vertices.data(), sizeof(uint32_t) * modelData.vertices.size());
+
+
+	*/
 
 	//CPUで動かす用のTransformを作る
 	TransformStructure transformSphere{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
@@ -864,7 +871,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		dxCommon->GetCommadList()->IASetVertexBuffers(0, 1, &vertexBufferView); //VBVを設定
 		//IBVを設定
-		dxCommon->GetCommadList()->IASetIndexBuffer(&indexBufferView);
+		//dxCommon->GetCommadList()->IASetIndexBuffer(&indexBufferView);
 		//マテリアルCBufferの場所を設定
 		dxCommon->GetCommadList()->SetGraphicsRootConstantBufferView(0, materialResource->GetGPUVirtualAddress());
 
@@ -880,23 +887,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		//描画
 		dxCommon->GetCommadList()->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
-		//commandList->DrawIndexedInstanced(UINT(sizeof(VertexData)* modelData.vertices.size()), 1, 0, 0, 0);
-
-		
-
-		//Spriteの描画。変更が必要なものだけ変更する
-		//dxCommon->GetCommadList()->IASetVertexBuffers(0, 1, &vertexBufferViewSprite);
-		//IBVを設定
-		//dxCommon->GetCommadList()->IASetIndexBuffer(&indexBufferViewSprite);
-		//マテリアルCBufferの場所を設定
-		//dxCommon->GetCommadList()->SetGraphicsRootConstantBufferView(0, materialResourceSprite->GetGPUVirtualAddress());
-		//TransformationMatrixCBufferの場所を設定
-		//dxCommon->GetCommadList()->SetGraphicsRootConstantBufferView(1, transformationMatrixResourceSprite->GetGPUVirtualAddress());
-
-		//描画
-		//commandList->DrawInstanced(6, 1, 0, 0);
-		//dxCommon->GetCommadList()->DrawIndexedInstanced(6, 1, 0, 0, 0);
-
+		//dxCommon->GetCommadList()->DrawIndexedInstanced(UINT(modelData.vertices.size()), 1, 0, 0, 0);
 		
 
 		//実際のcommandListのImGuiの描画コマンドを積む

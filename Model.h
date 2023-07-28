@@ -1,5 +1,4 @@
 #pragma once
-
 #include <DirectXMath.h>
 #include <Windows.h>
 #include <d3d12.h>
@@ -9,16 +8,16 @@
 
 #pragma comment(lib, "dxcompiler.lib")
 
+#include "DirectXCommon.h"
+
 #include "Vector2.h"
 #include "Vector3.h"
 #include "Vector4.h"
 #include "Matrix4x4.h"
 
-/// <summary>
-/// スプライト
-/// </summary>
-class Sprite
+class Model
 {
+
 public:
 
 	struct VertexData {
@@ -28,6 +27,18 @@ public:
 		Vector3 normal;
 
 	};
+
+	struct MaterialData {
+		std::string textureFilePath;
+	};
+
+	struct ModelData {
+
+		std::vector<VertexData> vertices;
+		MaterialData material;
+	
+	};
+
 	struct TransformationMatrix {
 		Matrix4x4 WVP;
 		Matrix4x4 World;
@@ -39,14 +50,12 @@ public:
 		Vector3 translate;
 	};
 
-public:
 
 	/// <summary>
 	/// 静的初期化
 	/// </summary>
 	/// <param name="device">デバイス</param>
-	static void StaticInitialize(
-		ID3D12Device* device);
+	static void StaticInitialize(ID3D12Device* device);
 
 	/// <summary>
 	/// 静的前処理
@@ -60,18 +69,13 @@ public:
 	static void PostDraw();
 
 	/// <summary>
-	/// スプライト生成
+	/// 3Dモデル生成
 	/// </summary>
-	/// <param name="textureHandle">テクスチャハンドル</param>
-
-	/// <returns>生成されたスプライト</returns>
-	static Sprite* Create(
-		uint32_t textureHandle, const Vector3& scale, const Vector3& rotate, const Vector3& position);
+	/// <returns></returns>
+	static Model* Create(const std::string& directoryPath, const std::string& filename, DirectXCommon* dxCommon);
 
 private:
 
-	// 頂点数
-	static const int kVertNum = 6;
 	// デバイス
 	static ID3D12Device* sDevice;
 	// ディスクリプタサイズ
@@ -83,75 +87,13 @@ private:
 	// パイプラインステートオブジェクト
 	static Microsoft::WRL::ComPtr<ID3D12PipelineState> sPipelineState;
 
-public:
-	/// <summary>
-	/// コンストラクタ
-	/// </summary>
-	Sprite();
-	/// <summary>
-	/// コンストラクタ
-	/// </summary>
-	Sprite(
-		uint32_t textureHandle, const Vector3& scale, const Vector3& rotate, const Vector3& position, const Vector2& size);
-
-	/// <summary>
-	/// 初期化
-	/// </summary>
-	/// <returns>成否</returns>
-	bool Initialize();
-
-	/// <summary>
-	/// 更新
-	/// </summary>
-	void Update();
-
-	/// <summary>
-	/// テクスチャハンドルの設定
-	/// </summary>
-	/// <param name="textureHandle"></param>
-	void SetTextureHandle(uint32_t textureHandle);
-
-	uint32_t GetTevtureHandle() { return textureHandle_;}
-
-	/// <summary>
-	/// 描画
-	/// </summary>
-	void Draw();
-
 private:
-	// 頂点バッファ
-	Microsoft::WRL::ComPtr<ID3D12Resource> vertBuff_;
-	// 頂点バッファマップ
-	VertexData* vertMap = nullptr;
-	// 頂点バッファビュー
-	D3D12_VERTEX_BUFFER_VIEW vbView_{};
 
-	Microsoft::WRL::ComPtr<ID3D12Resource> indexBuff_;
+	/// <summary>
+	/// グラフィックパイプライン生成
+	/// </summary>
+	static void InitializeGraphicsPipeline();
 
-	//インデックスバッファビュー
-	D3D12_INDEX_BUFFER_VIEW ibView_{};
-
-	//インデックスリソースにデータを書き込む
-	uint32_t* indexMap = nullptr;
-
-	//Sprite用のTransformationMatrix用のリソースを作る。Matrix4x4 1つ分のサイズ
-	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixBuff_;
-	//データを書き込む
-	TransformationMatrix* transformationMatrixMap = nullptr;
-
-	//CPUで動かす用のTransformを作る
-	TransformStructure transformSprite;
-
-
-	//テクスチャ番号
-	UINT textureHandle_ = 0;
-	// リソース設定
-	D3D12_RESOURCE_DESC resourceDesc_;
-	// サイズ
-	Vector2 size_;
-
-
-private:
 
 	//ログ
 	static void Log(const std::string& message);
@@ -173,6 +115,62 @@ private:
 
 	//Resource作成関数化
 	static Microsoft::WRL::ComPtr<ID3D12Resource> CreateBufferResource(Microsoft::WRL::ComPtr<ID3D12Device> device, const size_t& sizeInBytes);
+
+public:
+
+	/// <summary>
+	/// 初期化
+	/// </summary>
+	void Initialize(const std::string& directoryPath, const std::string& filename, DirectXCommon* dxCommon);
+
+	/// <summary>
+	/// 描画
+	/// </summary>
+	void Draw();
+
+	/// <summary>
+	/// メッシュデータ生成
+	/// </summary>
+	void CreateMesh(const std::string& directoryPath, const std::string& filename);
+
+	Model::MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename);
+
+	//objファイルを読む
+	Model::ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
+
+
+	/// <summary>
+	/// テクスチャハンドルの設定
+	/// </summary>
+	/// <param name="textureHandle"></param>
+	void SetTextureHandle(uint32_t textureHandle);
+
+	uint32_t GetTevtureHandle() { return textureHandle_; }
+
+private:
+	// 頂点バッファ
+	Microsoft::WRL::ComPtr<ID3D12Resource> vertBuff_;
+	// 頂点バッファマップ
+	VertexData* vertMap = nullptr;
+	// 頂点バッファビュー
+	D3D12_VERTEX_BUFFER_VIEW vbView_{};
+
+	// TransformationMatrix用のリソースを作る。Matrix4x4 1つ分のサイズ
+	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixBuff_;
+	//データを書き込む
+	TransformationMatrix* transformationMatrixMap = nullptr;
+
+	//CPUで動かす用のTransformを作る
+	TransformStructure transform;
+
+	//モデル読み込み
+	Model::ModelData modelData;
+
+	//テクスチャ番号
+	UINT textureHandle_ = 0;
+	// リソース設定
+	D3D12_RESOURCE_DESC resourceDesc_;
+
 
 };
 
