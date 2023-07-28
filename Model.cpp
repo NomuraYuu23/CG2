@@ -506,7 +506,7 @@ void Model::Initialize(const std::string& directoryPath, const std::string& file
 /// </summary>
 void Model::Update(const TransformStructure& transform, const TransformStructure& cameraTransform) {
 
-	transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+	transform_ = transform;
 
 	//回転
 	//transform.rotate.y = 3.5f;

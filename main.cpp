@@ -130,7 +130,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	*/
 
 
-	// モード1
+	// スプライト
 
 	//テクスチャ
 	uint32_t textureHandle = TextureManager::Load("resources/uvChecker.png", dxCommon);
@@ -154,6 +154,25 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	Vector4 colorSprite = { 1.0f,1.0f,1.0f,1.0f };
 
+	// モデル球
+
+	// マテリアル
+	TransformStructure uvTransformBall{
+		{1.0f,1.0f,1.0f},
+		{0.0f,0.0f,0.0f},
+		{0.0f,0.0f,0.0f},
+	};
+	std::unique_ptr<Material> materialBall;
+	materialBall.reset(
+		Material::Create()
+	);
+
+	//Transform変数を作る
+	TransformStructure transformBall{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+	std::unique_ptr<Model> modelBall;
+	modelBall.reset(Model::Create("resources", "Ball.obj", dxCommon, materialBall.get()));
+
+	Vector4 colorBall = { 1.0f,1.0f,1.0f,1.0f };
 
 	//ウィンドウののボタンが押されるまでループ
 	while (true) {
@@ -169,6 +188,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 
+		//スプライト
+		ImGui::Begin("Sprite");
 		ImGui::DragFloat2("transformSprite.translate", &transformSprite.translate.x);
 		ImGui::DragFloat2("transformSprite.scale", &transformSprite.scale.x, 0.01f, -10.0f, 10.0f);
 		ImGui::SliderAngle("transformSprite.rotate", &transformSprite.rotate.z);
@@ -176,6 +197,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::DragFloat2("uvTransform.scale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
 		ImGui::SliderAngle("uvTransform.rotate", &uvTransformSprite.rotate.z);
 		ImGui::ColorEdit4("color", &colorSprite.x);
+		ImGui::End();
+
+		//モデル
+		ImGui::Begin("ModelBall");
+		ImGui::DragFloat3("transformBall.translate", &transformBall.translate.x, 0.1f);
+		ImGui::DragFloat3("transformBall.scale", &transformBall.scale.x, 0.01f, -10.0f, 10.0f);
+		ImGui::DragFloat3("transformBall.rotate", &transformBall.rotate.x, 0.01f, -10.0f, 10.0f);
+		ImGui::ColorEdit4("color", &colorBall.x);
+		ImGui::End();
 
 		//開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
 		ImGui::ShowDemoWindow();
@@ -192,8 +222,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		*/
 
+		//更新
+
+		//スプライト
 		materialSprite->Update(uvTransformSprite, colorSprite, false);
 		sprite->Update(transformSprite);
+		
+		//モデル
+		materialBall->Update(uvTransformBall, colorBall, false);
+		modelBall->Update(transformBall, cameraTransform);
 
 		//ImGuiの内部コマンドを生成する
 		ImGui::Render();
@@ -222,7 +259,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Model::PreDraw(dxCommon->GetCommadList());
 
 		//モデル
-		//model->Draw();
+		modelBall->Draw();
 
 		Model::PostDraw();
 
