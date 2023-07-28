@@ -53,7 +53,6 @@ public:
 	void ClearDepthBuffer();
 
 	ID3D12Device* GetDevice() const { return device_.Get(); }
-	//Microsoft::WRL::ComPtr<ID3D12Device> GetDevice2() const { return device_; }
 
 	ID3D12GraphicsCommandList* GetCommadList() const { return commandList_.Get(); }
 

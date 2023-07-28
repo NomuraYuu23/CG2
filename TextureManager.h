@@ -7,6 +7,7 @@
 #include <wrl.h>
 #include "externals/DirectXTex/DirectXTex.h"
 
+#include "WinApp.h"
 #include "DirectXCommon.h"
 
 using namespace DirectX;
@@ -68,6 +69,13 @@ public:
 	/// <param name="rootParamIndex">ルートパラメータ番号</param>
 	/// <param name="textureHandle">テクスチャハンドル</param>
 	void SetGraphicsRootDescriptorTable(ID3D12GraphicsCommandList* commandList, UINT rootParamIndex, uint32_t textureHandle);
+
+	static ID3D12DescriptorHeap* StaticGetDescriptorHeap() { return GetInstance()->descriptorHeap_.Get(); }
+
+	static D3D12_CPU_DESCRIPTOR_HANDLE StaticGetCPUDescriptorHandle() { return GetInstance()->GetCPUDescriptorHandle(GetInstance()->descriptorHeap_.Get(), GetInstance()->device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV), 0); }
+
+	static D3D12_GPU_DESCRIPTOR_HANDLE StaticGetGPUDescriptorHandle() { return GetInstance()->GetGPUDescriptorHandle(GetInstance()->descriptorHeap_.Get(), GetInstance()->device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV), 0); }
+
 
 private:
 	TextureManager() = default;

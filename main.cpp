@@ -78,6 +78,18 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	D3DResourceLeakChecker leakChecker;
 
+	//ImGuiの初期化。
+
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGui::StyleColorsDark();
+	ImGui_ImplWin32_Init(win->GetHwnd());
+	ImGui_ImplDX12_Init(dxCommon->GetDevice(),
+		2,								 // ダブルバッファ
+		DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, // SRGB
+		TextureManager::StaticGetDescriptorHeap(),
+		TextureManager::StaticGetCPUDescriptorHandle(),
+		TextureManager::StaticGetGPUDescriptorHandle());
 
 	//Transform変数を作る(カメラ)
 	TransformStructure cameraTransform{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -10.0f} };
@@ -129,21 +141,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	std::unique_ptr<DirectionalLight> directionalLight;
 	directionalLight.reset(DirectionalLight::Create());
 
-	/*
-	
-	//ImGuiの初期化。
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGui::StyleColorsDark();
-	ImGui_ImplWin32_Init(win->GetHwnd());
-	ImGui_ImplDX12_Init(device.Get(),
-		swapChainDesc.BufferCount,
-		rtvDesc.Format,
-		srvDescriptorHeap.Get(),
-		GetCPUDescriptorHandle(srvDescriptorHeap.Get(), desriptorSizeSRV, 0),
-		GetGPUDescriptorHandle(srvDescriptorHeap.Get(), desriptorSizeSRV, 0));
-
-	*/
 
 	//ウィンドウののボタンが押されるまでループ
 	while (true) {
@@ -152,22 +149,17 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			break;
 		}
 
-		/*
+
 		//ゲームの処理 
 		//ImGui
 		ImGui_ImplDX12_NewFrame();
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 
-		ImGui::Checkbox("useMonsterBall", &useMonsterBall);
-		ImGui::DragFloat2("UVTranslate", &uvTransformSprite.translate.x, 0.01f, -10.0f, 10.0f);
-		ImGui::DragFloat2("UVScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
-		ImGui::SliderAngle("UVRotate", &uvTransformSprite.rotate.z);
-
 		//開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
 		ImGui::ShowDemoWindow();
 
-		*/
+
 
 		sprite->Update(transformSprite);
 
@@ -179,7 +171,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		directionalLight->Update(directionalLightData);
 
 		//ImGuiの内部コマンドを生成する
-		//ImGui::Render();
+		ImGui::Render();
 
 		//描画前処理
 		dxCommon->PreDraw();
@@ -208,11 +200,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		Model::PostDraw();
 
-		//実際のcommandListのImGuiの描画コマンドを積む
-		//ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->GetCommadList());
-
 #pragma region 前景スプライト描画
-// 背景スプライト描画前処理
+	// 背景スプライト描画前処理
 		Sprite::PreDraw(dxCommon->GetCommadList());
 
 		//背景スプライト描画
@@ -222,6 +211,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Sprite::PostDraw();
 
 #pragma endregion
+
+		//実際のcommandListのImGuiの描画コマンドを積む
+		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->GetCommadList());
+
 
 		//描画後処理
 		dxCommon->PostDraw();
@@ -233,9 +226,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 
 	//色々な解放処理の前に書く
-	//ImGui_ImplDX12_Shutdown();
-	//ImGui_ImplWin32_Shutdown();
-	//ImGui::DestroyContext();
+	ImGui_ImplDX12_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
 
 	//ゲームウィンドウの破棄
 	win->TerminateGameWindow();

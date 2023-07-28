@@ -1,5 +1,6 @@
 #include "TextureManager.h"
 #include <cassert>
+#include "externals/imgui/imgui_impl_dx12.h"
 
 using namespace DirectX;
 
@@ -98,7 +99,6 @@ void TextureManager::SetGraphicsRootDescriptorTable(ID3D12GraphicsCommandList* c
 	commandList->SetGraphicsRootDescriptorTable(rootParamIndex, textures_[textureHandle].gpuDescHandleSRV);
 
 }
-
 
 //コンバートストリング
 std::wstring TextureManager::ConvertString(const std::string& str) {
@@ -313,8 +313,8 @@ uint32_t TextureManager::LoadInternal(const std::string& fileName, DirectXCommon
 	const uint32_t desriptorSizeSRV = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	
 	//SRVを作成するDescriptorHeapの場所を決める
-	texture.cpuDescHandleSRV = GetCPUDescriptorHandle(descriptorHeap_.Get(), desriptorSizeSRV, 0);
-	texture.gpuDescHandleSRV = GetGPUDescriptorHandle(descriptorHeap_.Get(), desriptorSizeSRV, 0);
+	texture.cpuDescHandleSRV = GetCPUDescriptorHandle(descriptorHeap_.Get(), desriptorSizeSRV, 1);
+	texture.gpuDescHandleSRV = GetGPUDescriptorHandle(descriptorHeap_.Get(), desriptorSizeSRV, 1);
 	//SRVの生成
 	device_->CreateShaderResourceView(texture.resource.Get(), &srvDesc, texture.cpuDescHandleSRV);
 
