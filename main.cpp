@@ -73,6 +73,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//Transform変数を作る(カメラ)
 	TransformStructure cameraTransform{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -10.0f} };
 
+	/*
+
 	//テクスチャ
 	uint32_t textureHandle = TextureManager::Load("resources/uvChecker.png", dxCommon);
 
@@ -120,6 +122,28 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	std::unique_ptr<DirectionalLight> directionalLight;
 	directionalLight.reset(DirectionalLight::Create());
 
+	*/
+
+	//テクスチャ
+	uint32_t textureHandle = TextureManager::Load("resources/uvChecker.png", dxCommon);
+
+	TransformStructure uvTransformSprite{
+	{1.0f,1.0f,1.0f},
+	{0.0f,0.0f,0.0f},
+	{0.0f,0.0f,0.0f},
+	};
+	std::unique_ptr<Material> materialSprite;
+	materialSprite.reset(
+		Material::Create()
+	);
+
+	//Transform変数を作る
+	TransformStructure transformSprite{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+	std::unique_ptr<Sprite> sprite;
+	sprite.reset(
+		Sprite::Create(
+			textureHandle, transformSprite, materialSprite.get()));
+
 
 	//ウィンドウののボタンが押されるまでループ
 	while (true) {
@@ -139,7 +163,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::ShowDemoWindow();
 
 
-
+		/*
 		sprite->Update(transformSprite);
 
 		model->Update(transform, cameraTransform);
@@ -148,6 +172,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		materialSprite->Update(uvTransformSprite, Vector4(1.0f, 1.0f, 1.0f, 1.0f), false);
 
 		directionalLight->Update(directionalLightData);
+
+		*/
+
+		sprite->Update(transformSprite);
 
 		//ImGuiの内部コマンドを生成する
 		ImGui::Render();
@@ -171,11 +199,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma endregion
 
 		//光源
-		directionalLight->Draw(dxCommon->GetCommadList());
+		//directionalLight->Draw(dxCommon->GetCommadList());
 
 		Model::PreDraw(dxCommon->GetCommadList());
 
-		model->Draw();
+		//モデル
+		//model->Draw();
 
 		Model::PostDraw();
 
