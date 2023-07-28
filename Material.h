@@ -8,6 +8,12 @@
 #include <dxcapi.h>
 
 #pragma comment(lib, "dxcompiler.lib")
+
+#include "Vector2.h"
+#include "Vector3.h"
+#include "Vector4.h"
+#include "Matrix4x4.h"
+
 #include "MaterialData.h"
 #include "TransformStructure.h"
 
