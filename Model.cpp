@@ -427,6 +427,7 @@ Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std:
 		if (identifier == "v") {
 			Vector4 position;
 			s >> position.x >> position.y >> position.z;
+			position.z *= -1;
 			position.w = 1.0f;
 			positions.push_back(position);
 		}
@@ -494,7 +495,7 @@ void Model::Initialize(const std::string& directoryPath, const std::string& file
 	//メッシュ生成
 	CreateMesh(directoryPath, filename);
 
-	textureHandle_ = TextureManager::Load(modelData.material.textureFilePath,dxCommon);
+	textureHandle_ = TextureManager::Load(modelData.material.textureFilePath, dxCommon);
 
 	material_ = material;
 
@@ -522,17 +523,17 @@ void Model::Update(const TransformStructure& transform, const TransformStructure
 /// <summary>
 /// 描画
 /// </summary>
-void Model::Draw(){
+void Model::Draw() {
 
 	// nullptrチェック
 	assert(sDevice);
 	assert(sCommandList);
-	
+
 	sCommandList->IASetVertexBuffers(0, 1, &vbView_); //VBVを設定
 
 	//wvp用のCBufferの場所を設定
 	sCommandList->SetGraphicsRootConstantBufferView(1, transformationMatrixBuff_->GetGPUVirtualAddress());
-	
+
 	//マテリアルCBufferの場所を設定
 	sCommandList->SetGraphicsRootConstantBufferView(0, material_->GetMaterialBuff()->GetGPUVirtualAddress());
 

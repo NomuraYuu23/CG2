@@ -64,7 +64,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	WinApp* win = nullptr;
 	DirectXCommon* dxCommon = nullptr;
 
-
 	//ゲームウィンドウの作成
 	win = WinApp::GetInstance();
 	win->CreateGameWindow();
