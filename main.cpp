@@ -129,6 +129,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	*/
 
+	//生存フラグ
+	bool isAliveSprite = true;
+	bool isAliveBall = false;
+	bool isAliveTriangle = false;
+	bool isAliveTriangle2 = false;
+
 
 	// スプライト
 
@@ -174,6 +180,31 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	Vector4 colorBall = { 1.0f,1.0f,1.0f,1.0f };
 
+	// モデル三角形
+
+	// マテリアル
+	TransformStructure uvTransformTriangle{
+		{1.0f,1.0f,1.0f},
+		{0.0f,0.0f,0.0f},
+		{0.0f,0.0f,0.0f},
+	};
+	std::unique_ptr<Material> materialTriangle;
+	materialTriangle.reset(
+		Material::Create()
+	);
+
+	//Transform変数を作る
+	TransformStructure transformTriangle{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+	std::unique_ptr<Model> modelTriangle;
+	modelTriangle.reset(Model::Create("resources", "Triangle.obj", dxCommon, materialTriangle.get()));
+
+	Vector4 colorTriangle = { 1.0f,1.0f,1.0f,1.0f };
+
+	//Transform変数を作る
+	TransformStructure transformTriangle2{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+	std::unique_ptr<Model> modelTriangle2;
+	modelTriangle2.reset(Model::Create("resources", "Triangle.obj", dxCommon, materialTriangle.get()));
+
 	//ウィンドウののボタンが押されるまでループ
 	while (true) {
 		//Windowにメッセージが来てたら最優先で処理させる
@@ -188,25 +219,84 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui_ImplWin32_NewFrame();
 		ImGui::NewFrame();
 
+		//生存フラグ
+		ImGui::Begin("IsAlive");
+		ImGui::Checkbox("Sprie", &isAliveSprite);
+		ImGui::Checkbox("Ball", &isAliveBall);
+		ImGui::Checkbox("Triangle", &isAliveTriangle);
+		ImGui::Checkbox("Triangle2", &isAliveTriangle2);
+		ImGui::End();
+
+		//カメラ
+		ImGui::Begin("Camera");
+		ImGui::DragFloat3("translate", &cameraTransform.translate.x);
+		ImGui::DragFloat3("rotate", &cameraTransform.rotate.x, 0.01f, -10.0f, 10.0f);
+		ImGui::End();
+
 		//スプライト
-		ImGui::Begin("Sprite");
-		ImGui::DragFloat2("transformSprite.translate", &transformSprite.translate.x);
-		ImGui::DragFloat2("transformSprite.scale", &transformSprite.scale.x, 0.01f, -10.0f, 10.0f);
-		ImGui::SliderAngle("transformSprite.rotate", &transformSprite.rotate.z);
-		ImGui::DragFloat2("uvTransform.translate", &uvTransformSprite.translate.x, 0.01f, -1.0f, 1.0f);
-		ImGui::DragFloat2("uvTransform.scale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
-		ImGui::SliderAngle("uvTransform.rotate", &uvTransformSprite.rotate.z);
-		ImGui::ColorEdit4("color", &colorSprite.x);
-		ImGui::End();
+		if (isAliveSprite) {
 
-		//モデル
-		ImGui::Begin("ModelBall");
-		ImGui::DragFloat3("transformBall.translate", &transformBall.translate.x, 0.1f);
-		ImGui::DragFloat3("transformBall.scale", &transformBall.scale.x, 0.01f, -10.0f, 10.0f);
-		ImGui::DragFloat3("transformBall.rotate", &transformBall.rotate.x, 0.01f, -10.0f, 10.0f);
-		ImGui::ColorEdit4("color", &colorBall.x);
-		ImGui::End();
+			ImGui::Begin("Sprite");
+			ImGui::DragFloat2("translate", &transformSprite.translate.x);
+			ImGui::DragFloat2("scale", &transformSprite.scale.x, 0.01f, -10.0f, 10.0f);
+			ImGui::SliderAngle("rotate", &transformSprite.rotate.z);
+			ImGui::DragFloat2("uvTranslate", &uvTransformSprite.translate.x, 0.01f, -1.0f, 1.0f);
+			ImGui::DragFloat2("uvScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
+			ImGui::SliderAngle("uvRotate", &uvTransformSprite.rotate.z);
+			ImGui::ColorEdit3("color", &colorSprite.x);
+			ImGui::End();
 
+			materialSprite->Update(uvTransformSprite, colorSprite, false);
+			sprite->Update(transformSprite);
+
+		}
+
+		//モデル球
+		if (isAliveBall) {
+
+			ImGui::Begin("ModelBall");
+			ImGui::DragFloat3("translate", &transformBall.translate.x, 0.1f);
+			ImGui::DragFloat3("scale", &transformBall.scale.x, 0.01f, -10.0f, 10.0f);
+			ImGui::DragFloat3("rotate", &transformBall.rotate.x, 0.01f, -10.0f, 10.0f);
+			ImGui::ColorEdit3("color", &colorBall.x);
+			ImGui::End();
+
+			materialBall->Update(uvTransformBall, colorBall, false);
+			modelBall->Update(transformBall, cameraTransform);
+
+		}
+
+		//モデル三角
+		if (isAliveTriangle) {
+
+			ImGui::Begin("Triangle");
+			ImGui::DragFloat3("translate", &transformTriangle.translate.x, 0.1f);
+			ImGui::DragFloat3("scale", &transformTriangle.scale.x, 0.01f, -10.0f, 10.0f);
+			ImGui::DragFloat3("rotate", &transformTriangle.rotate.x, 0.01f, -10.0f, 10.0f);
+			ImGui::ColorEdit3("color", &colorTriangle.x);
+			ImGui::End();
+
+			materialTriangle->Update(uvTransformTriangle, colorTriangle, false);
+			modelTriangle->Update(transformTriangle, cameraTransform);
+
+		}
+
+		//モデル三角2
+		if (isAliveTriangle) {
+		
+			ImGui::Begin("transformTriangle2");
+			ImGui::DragFloat3("translate", &transformTriangle2.translate.x, 0.1f);
+			ImGui::DragFloat3("scale", &transformTriangle2.scale.x, 0.01f, -10.0f, 10.0f);
+			ImGui::DragFloat3("rotate", &transformTriangle2.rotate.x, 0.01f, -10.0f, 10.0f);
+			ImGui::ColorEdit3("color", &colorTriangle.x);
+			ImGui::End();
+
+			if (!isAliveTriangle) {
+				materialTriangle->Update(uvTransformTriangle, colorTriangle, false);
+			}
+			modelTriangle2->Update(transformTriangle2, cameraTransform);
+		
+		}
 		//開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
 		ImGui::ShowDemoWindow();
 
@@ -222,15 +312,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		*/
 
-		//更新
-
-		//スプライト
-		materialSprite->Update(uvTransformSprite, colorSprite, false);
-		sprite->Update(transformSprite);
-		
-		//モデル
-		materialBall->Update(uvTransformBall, colorBall, false);
-		modelBall->Update(transformBall, cameraTransform);
 
 		//ImGuiの内部コマンドを生成する
 		ImGui::Render();
@@ -243,7 +324,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Sprite::PreDraw(dxCommon->GetCommadList());
 
 		//背景スプライト描画
-		sprite->Draw();
+		if (isAliveSprite) {
+			sprite->Draw();
+		}
 
 		// スプライト描画後処理
 		Sprite::PostDraw();
@@ -259,7 +342,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		Model::PreDraw(dxCommon->GetCommadList());
 
 		//モデル
-		modelBall->Draw();
+		if (isAliveBall) {
+			modelBall->Draw();
+		}
+		if (isAliveTriangle) {
+			modelTriangle->Draw();
+		}
+		if (isAliveTriangle2) {
+			modelTriangle2->Draw();
+		}
 
 		Model::PostDraw();
 
@@ -275,6 +366,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 #pragma endregion
 
+
+		// シェーダーリソースビューをセット
+		TextureManager::GetInstance()->SetGraphicsRootDescriptorTable(dxCommon->GetCommadList(), 2, 0);
 		//実際のcommandListのImGuiの描画コマンドを積む
 		ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dxCommon->GetCommadList());
 
