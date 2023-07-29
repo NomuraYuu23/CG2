@@ -135,11 +135,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	bool isAliveTriangle = false;
 	bool isAliveTriangle2 = false;
 
-
 	// スプライト
 
 	//テクスチャ
-	uint32_t textureHandle = TextureManager::Load("resources/uvChecker.png", dxCommon);
+	uint32_t textureHandle = TextureManager::Load("resources/checkerBoard.png", dxCommon);
+	uint32_t textureHandle2 = TextureManager::Load("resources/monsterBall.png", dxCommon);
+
+	bool isUvChecker = true;
 
 	TransformStructure uvTransformSprite{
 	{1.0f,1.0f,1.0f},
@@ -244,7 +246,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui::DragFloat2("uvScale", &uvTransformSprite.scale.x, 0.01f, -10.0f, 10.0f);
 			ImGui::SliderAngle("uvRotate", &uvTransformSprite.rotate.z);
 			ImGui::ColorEdit3("color", &colorSprite.x);
+			ImGui::Checkbox("uvChacker", &isUvChecker);
 			ImGui::End();
+
+			if (isUvChecker) {
+				sprite->SetTextureHandle(textureHandle);
+			}
+			else {
+				sprite->SetTextureHandle(textureHandle2);
+			}
 
 			materialSprite->Update(uvTransformSprite, colorSprite, false);
 			sprite->Update(transformSprite);
