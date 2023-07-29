@@ -313,8 +313,8 @@ uint32_t TextureManager::LoadInternal(const std::string& fileName, DirectXCommon
 	const uint32_t desriptorSizeSRV = device_->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	
 	//SRVを作成するDescriptorHeapの場所を決める
-	texture.cpuDescHandleSRV = GetCPUDescriptorHandle(descriptorHeap_.Get(), desriptorSizeSRV, indexNextDescriptorHeap);
-	texture.gpuDescHandleSRV = GetGPUDescriptorHandle(descriptorHeap_.Get(), desriptorSizeSRV, indexNextDescriptorHeap);
+	texture.cpuDescHandleSRV = GetCPUDescriptorHandle(descriptorHeap_.Get(), desriptorSizeSRV, indexNextDescriptorHeap + 1);
+	texture.gpuDescHandleSRV = GetGPUDescriptorHandle(descriptorHeap_.Get(), desriptorSizeSRV, indexNextDescriptorHeap + 1);
 	//SRVの生成
 	device_->CreateShaderResourceView(texture.resource.Get(), &srvDesc, texture.cpuDescHandleSRV);
 

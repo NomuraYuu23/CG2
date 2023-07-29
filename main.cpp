@@ -78,57 +78,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	//Transform変数を作る(カメラ)
 	TransformStructure cameraTransform{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -10.0f} };
 
-	/*
-
-	//テクスチャ
-	uint32_t textureHandle = TextureManager::Load("resources/uvChecker.png", dxCommon);
-
-	// マテリアル
-	TransformStructure uvTransform{
-	{1.0f,1.0f,1.0f},
-	{0.0f,0.0f,0.0f},
-	{0.0f,0.0f,0.0f},
-	};
-	std::unique_ptr<Material> material;
-	material.reset(
-		Material::Create()
-	);
-
-	TransformStructure uvTransformSprite{
-	{1.0f,1.0f,1.0f},
-	{0.0f,0.0f,0.0f},
-	{0.0f,0.0f,0.0f},
-	};
-	std::unique_ptr<Material> materialSprite;
-	materialSprite.reset(
-		Material::Create()
-	);
-
-	// スプライト
-	//Transform変数を作る
-	TransformStructure transformSprite{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
-	std::unique_ptr<Sprite> sprite;
-	sprite.reset(
-		Sprite::Create(
-			textureHandle, transformSprite, materialSprite.get()));
-
-	// モデル
-
-	//Transform変数を作る
-	TransformStructure transform{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
-	std::unique_ptr<Model> model;
-	model.reset(Model::Create("resources", "axis.obj", dxCommon, material.get()));
-
-	//平行光源リソースを作る
-	DirectionalLightData directionalLightData;
-	directionalLightData.color = { 1.0f,1.0f,1.0f,1.0f };
-	directionalLightData.direction = { 0.0f, -1.0f, 0.0f };
-	directionalLightData.intencity = 1.0f;
-	std::unique_ptr<DirectionalLight> directionalLight;
-	directionalLight.reset(DirectionalLight::Create());
-
-	*/
-
 	//生存フラグ
 	bool isAliveSprite = true;
 	bool isAliveBall = false;
@@ -138,7 +87,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// スプライト
 
 	//テクスチャ
-	uint32_t textureHandle = TextureManager::Load("resources/checkerBoard.png", dxCommon);
+	uint32_t textureHandle = TextureManager::Load("resources/uvChecker.png", dxCommon);
 	uint32_t textureHandle2 = TextureManager::Load("resources/monsterBall.png", dxCommon);
 
 	bool isUvChecker = true;
@@ -181,6 +130,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	modelBall.reset(Model::Create("resources", "Ball.obj", dxCommon, materialBall.get()));
 
 	Vector4 colorBall = { 1.0f,1.0f,1.0f,1.0f };
+	int enableLightingBall = HalfLambert;
 
 	// モデル三角形
 
@@ -201,11 +151,20 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	modelTriangle.reset(Model::Create("resources", "Triangle.obj", dxCommon, materialTriangle.get()));
 
 	Vector4 colorTriangle = { 1.0f,1.0f,1.0f,1.0f };
+	int enableLightingTriangle = None;
 
 	//Transform変数を作る
 	TransformStructure transformTriangle2{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
 	std::unique_ptr<Model> modelTriangle2;
 	modelTriangle2.reset(Model::Create("resources", "Triangle.obj", dxCommon, materialTriangle.get()));
+
+	//平行光源リソースを作る
+	DirectionalLightData directionalLightData;
+	directionalLightData.color = { 1.0f,1.0f,1.0f,1.0f };
+	directionalLightData.direction = { 0.0f, -1.0f, 0.0f };
+	directionalLightData.intencity = 1.0f;
+	std::unique_ptr<DirectionalLight> directionalLight;
+	directionalLight.reset(DirectionalLight::Create());
 
 	//ウィンドウののボタンが押されるまでループ
 	while (true) {
@@ -235,6 +194,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::DragFloat3("rotate", &cameraTransform.rotate.x, 0.01f, -10.0f, 10.0f);
 		ImGui::End();
 
+		//光源
+		ImGui::Begin("directionalLight");
+		ImGui::ColorEdit3("color", &directionalLightData.color.x);
+		ImGui::DragFloat3("direction", &directionalLightData.direction.x, 0.01f, -1.0f, 1.0f);
+		ImGui::DragFloat("intencity", &directionalLightData.intencity);
+		ImGui::End();
+
 		//スプライト
 		if (isAliveSprite) {
 
@@ -256,7 +222,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 				sprite->SetTextureHandle(textureHandle2);
 			}
 
-			materialSprite->Update(uvTransformSprite, colorSprite, false);
+			materialSprite->Update(uvTransformSprite, colorSprite, None);
 			sprite->Update(transformSprite);
 
 		}
@@ -269,9 +235,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui::DragFloat3("scale", &transformBall.scale.x, 0.01f, -10.0f, 10.0f);
 			ImGui::DragFloat3("rotate", &transformBall.rotate.x, 0.01f, -10.0f, 10.0f);
 			ImGui::ColorEdit3("color", &colorBall.x);
+			ImGui::Text("enableLighting");
+			ImGui::RadioButton("None", &enableLightingBall, None);
+			ImGui::SameLine();
+			ImGui::RadioButton("Lambert", &enableLightingBall, Lambert);
+			ImGui::SameLine();
+			ImGui::RadioButton("HalfLambert", &enableLightingBall, HalfLambert);
 			ImGui::End();
 
-			materialBall->Update(uvTransformBall, colorBall, false);
+			materialBall->Update(uvTransformBall, colorBall, enableLightingBall);
 			modelBall->Update(transformBall, cameraTransform);
 
 		}
@@ -284,44 +256,47 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 			ImGui::DragFloat3("scale", &transformTriangle.scale.x, 0.01f, -10.0f, 10.0f);
 			ImGui::DragFloat3("rotate", &transformTriangle.rotate.x, 0.01f, -10.0f, 10.0f);
 			ImGui::ColorEdit3("color", &colorTriangle.x);
+			ImGui::Text("enableLighting");
+			ImGui::RadioButton("None", &enableLightingTriangle, None);
+			ImGui::SameLine();
+			ImGui::RadioButton("Lambert", &enableLightingTriangle, Lambert);
+			ImGui::SameLine();
+			ImGui::RadioButton("HalfLambert", &enableLightingTriangle, HalfLambert);
 			ImGui::End();
 
-			materialTriangle->Update(uvTransformTriangle, colorTriangle, false);
+			materialTriangle->Update(uvTransformTriangle, colorTriangle, enableLightingTriangle);
 			modelTriangle->Update(transformTriangle, cameraTransform);
 
 		}
 
 		//モデル三角2
-		if (isAliveTriangle) {
+		if (isAliveTriangle2) {
 		
 			ImGui::Begin("transformTriangle2");
 			ImGui::DragFloat3("translate", &transformTriangle2.translate.x, 0.1f);
 			ImGui::DragFloat3("scale", &transformTriangle2.scale.x, 0.01f, -10.0f, 10.0f);
 			ImGui::DragFloat3("rotate", &transformTriangle2.rotate.x, 0.01f, -10.0f, 10.0f);
 			ImGui::ColorEdit3("color", &colorTriangle.x);
+			ImGui::Text("enableLighting");
+			ImGui::RadioButton("None", &enableLightingTriangle, None);
+			ImGui::SameLine();
+			ImGui::RadioButton("Lambert", &enableLightingTriangle, Lambert);
+			ImGui::SameLine();
+			ImGui::RadioButton("HalfLambert", &enableLightingTriangle, HalfLambert);
 			ImGui::End();
 
 			if (!isAliveTriangle) {
-				materialTriangle->Update(uvTransformTriangle, colorTriangle, false);
+				materialTriangle->Update(uvTransformTriangle, colorTriangle, enableLightingTriangle);
 			}
 			modelTriangle2->Update(transformTriangle2, cameraTransform);
 		
 		}
-		//開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
-		ImGui::ShowDemoWindow();
 
-		/*
-		sprite->Update(transformSprite);
-
-		model->Update(transform, cameraTransform);
-
-		material->Update(uvTransform, Vector4(1.0f, 1.0f, 1.0f, 1.0f), true);
-		materialSprite->Update(uvTransformSprite, Vector4(1.0f, 1.0f, 1.0f, 1.0f), false);
-
+		//光源
 		directionalLight->Update(directionalLightData);
 
-		*/
-
+		//開発用UIの処理。実際に開発用のUIを出す場合はここをゲーム固有の処理に置き換える
+		ImGui::ShowDemoWindow();
 
 		//ImGuiの内部コマンドを生成する
 		ImGui::Render();
@@ -347,7 +322,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 #pragma endregion
 
 		//光源
-		//directionalLight->Draw(dxCommon->GetCommadList());
+		directionalLight->Draw(dxCommon->GetCommadList());
 
 		Model::PreDraw(dxCommon->GetCommadList());
 

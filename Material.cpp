@@ -357,7 +357,7 @@ void Material::Initialize() {
 	//白を書き込んでみる
 	materialMap->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	//SpriteはLightingしないのでfalseを設定する
-	materialMap->enableLighting = false;	//UVTransfome初期化
+	materialMap->enableLighting = None;	//UVTransfome初期化
 	materialMap->uvTransform = MakeIdentity4x4();
 
 	uvTransform = {
@@ -371,7 +371,7 @@ void Material::Initialize() {
 /// <summary>
 /// 更新
 /// </summary>
-void Material::Update(const TransformStructure& transform, const Vector4& color, bool enableLighting) {
+void Material::Update(const TransformStructure& transform, const Vector4& color, int enableLighting) {
 
 	uvTransform = transform;
 

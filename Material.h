@@ -84,7 +84,7 @@ public:
 	/// <summary>
 	/// 更新
 	/// </summary>
-	void Update(const TransformStructure& transform, const Vector4& color, bool enableLighting);
+	void Update(const TransformStructure& transform, const Vector4& color, int enableLighting);
 
 	Microsoft::WRL::ComPtr<ID3D12Resource> GetMaterialBuff() { return materialBuff_; }
 
