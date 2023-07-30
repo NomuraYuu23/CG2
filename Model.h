@@ -21,6 +21,8 @@
 
 #include "Material.h"
 
+#include <vector>
+
 class Model
 {
 
@@ -59,6 +61,7 @@ public:
 	/// </summary>
 	/// <returns></returns>
 	static Model* Create(const std::string& directoryPath, const std::string& filename, DirectXCommon* dxCommon, Material* material);
+	static Model* Create(const std::string& directoryPath, const std::string& filename, DirectXCommon* dxCommon, std::vector<Material*> materials);
 
 private:
 
@@ -108,6 +111,7 @@ public:
 	/// 初期化
 	/// </summary>
 	void Initialize(const std::string& directoryPath, const std::string& filename, DirectXCommon* dxCommon, Material* material);
+	void Initialize(const std::string& directoryPath, const std::string& filename, DirectXCommon* dxCommon, std::vector<Material*> materials);
 
 	/// <summary>
 	/// 更新
@@ -127,7 +131,7 @@ public:
 	Model::MaterialData LoadMaterialTemplateFile(const std::string& directoryPath, const std::string& filename);
 
 	//objファイルを読む
-	Model::ModelData LoadObjFile(const std::string& directoryPath, const std::string& filename);
+	std::vector<Model::ModelData> LoadObjFile(const std::string& directoryPath, const std::string& filename);
 
 
 	/// <summary>
@@ -136,15 +140,15 @@ public:
 	/// <param name="textureHandle"></param>
 	void SetTextureHandle(uint32_t textureHandle);
 
-	uint32_t GetTevtureHandle() { return textureHandle_; }
+	//uint32_t GetTevtureHandle() { return textureHandle_; }
 
 private:
 	// 頂点バッファ
-	Microsoft::WRL::ComPtr<ID3D12Resource> vertBuff_;
+	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> vertBuffs_;
 	// 頂点バッファマップ
-	VertexData* vertMap = nullptr;
+	std::vector<VertexData*> vertMaps;
 	// 頂点バッファビュー
-	D3D12_VERTEX_BUFFER_VIEW vbView_{};
+	std::vector<D3D12_VERTEX_BUFFER_VIEW> vbViews_{};
 
 	// TransformationMatrix用のリソースを作る。Matrix4x4 1つ分のサイズ
 	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixBuff_;
@@ -154,17 +158,19 @@ private:
 	//CPUで動かす用のTransformを作る
 	TransformStructure transform_;
 
+
+	//以下複数にする
+
 	//モデル読み込み
-	Model::ModelData modelData;
+	std::vector<Model::ModelData> modelDatas_;
 
 	//テクスチャ番号
-	UINT textureHandle_ = 0;
+	std::vector<UINT> textureHandles_;
 	// リソース設定
-	D3D12_RESOURCE_DESC resourceDesc_;
+	std::vector<D3D12_RESOURCE_DESC> resourceDescs_;
 
 	// マテリアル
-	Material* material_ = nullptr;
-
+	std::vector<Material*> materials_;
 
 };
 

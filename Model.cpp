@@ -79,6 +79,21 @@ Model* Model::Create(const std::string& directoryPath, const std::string& filena
 
 }
 
+
+Model* Model::Create(const std::string& directoryPath, const std::string& filename, DirectXCommon* dxCommon, std::vector<Material*> materials) {
+
+
+	// 3Dオブジェクトのインスタンスを生成
+	Model* object3d = new Model();
+	assert(object3d);
+
+	// 初期化
+	object3d->Initialize(directoryPath, filename, dxCommon, materials);
+
+	return object3d;
+
+}
+
 /// <summary>
 /// グラフィックパイプライン生成
 /// </summary>
@@ -404,10 +419,11 @@ Model::MaterialData Model::LoadMaterialTemplateFile(const std::string& directory
 }
 
 //objファイルを読む
-Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std::string& filename) {
+std::vector<Model::ModelData> Model::LoadObjFile(const std::string& directoryPath, const std::string& filename) {
 
 	//1. 変数宣言
-	Model::ModelData modelData; // 構築するModelData
+	std::vector<Model::ModelData> modelDatas; // 構築するModelData
+	Model::ModelData modelData;
 	std::vector<Vector4> positions; //位置
 	std::vector<Vector3> normals; // 法線
 	std::vector<Vector2> texcoords;  //テクスチャ座標
@@ -475,10 +491,11 @@ Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std:
 			s >> materialFilename;
 			//基本的にobjファイルを同一階層にmtlは存在させるので、ディレクトリ名とファイル名を渡す
 			modelData.material = LoadMaterialTemplateFile(directoryPath, materialFilename);
+			modelDatas.push_back(modelData);
 		}
 	}
 
-	return modelData;
+	return modelDatas;
 
 }
 
@@ -487,17 +504,44 @@ Model::ModelData Model::LoadObjFile(const std::string& directoryPath, const std:
 /// 初期化
 /// </summary>
 void Model::Initialize(const std::string& directoryPath, const std::string& filename, DirectXCommon* dxCommon, Material* material) {
-
+	
 	assert(sDevice);
-
-	resourceDesc_ = TextureManager::GetInstance()->GetResourceDesc(textureHandle_);
 
 	//メッシュ生成
 	CreateMesh(directoryPath, filename);
 
-	textureHandle_ = TextureManager::Load(modelData.material.textureFilePath, dxCommon);
+	for (ModelData modelData : modelDatas_) {
 
-	material_ = material;
+		UINT textureHandle_ = TextureManager::Load(modelData.material.textureFilePath, dxCommon);
+		textureHandles_.push_back(textureHandle_);
+
+		D3D12_RESOURCE_DESC resourceDesc_ = TextureManager::GetInstance()->GetResourceDesc(textureHandle_);
+		resourceDescs_.push_back(resourceDesc_);
+
+	}
+
+	materials_.push_back(material);
+
+}
+
+void Model::Initialize(const std::string& directoryPath, const std::string& filename, DirectXCommon* dxCommon, std::vector<Material*> materials) {
+
+	assert(sDevice);
+
+	//メッシュ生成
+	CreateMesh(directoryPath, filename);
+
+	for (ModelData modelData : modelDatas_) {
+
+		UINT textureHandle_ = TextureManager::Load(modelData.material.textureFilePath, dxCommon);
+		textureHandles_.push_back(textureHandle_);
+
+		D3D12_RESOURCE_DESC resourceDesc_ = TextureManager::GetInstance()->GetResourceDesc(textureHandle_);
+		resourceDescs_.push_back(resourceDesc_);
+
+	}
+
+	materials_ = materials;
 
 }
 
@@ -529,20 +573,27 @@ void Model::Draw() {
 	assert(sDevice);
 	assert(sCommandList);
 
-	sCommandList->IASetVertexBuffers(0, 1, &vbView_); //VBVを設定
+	int i = 0;
 
-	//wvp用のCBufferの場所を設定
-	sCommandList->SetGraphicsRootConstantBufferView(1, transformationMatrixBuff_->GetGPUVirtualAddress());
+	for (ModelData modelData : modelDatas_) {
 
-	//マテリアルCBufferの場所を設定
-	sCommandList->SetGraphicsRootConstantBufferView(0, material_->GetMaterialBuff()->GetGPUVirtualAddress());
+		sCommandList->IASetVertexBuffers(0, 1, &vbViews_.at(i)); //VBVを設定
 
-	//SRVのDescriptorTableの先頭を設定。2はrootParamenter[2]である
-	TextureManager::GetInstance()->SetGraphicsRootDescriptorTable(sCommandList, 2, textureHandle_);
+		//wvp用のCBufferの場所を設定
+		sCommandList->SetGraphicsRootConstantBufferView(1, transformationMatrixBuff_->GetGPUVirtualAddress());
 
-	//描画
-	sCommandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
+		//マテリアルCBufferの場所を設定
+		sCommandList->SetGraphicsRootConstantBufferView(0, materials_.at(i)->GetMaterialBuff()->GetGPUVirtualAddress());
 
+		//SRVのDescriptorTableの先頭を設定。2はrootParamenter[2]である
+		TextureManager::GetInstance()->SetGraphicsRootDescriptorTable(sCommandList, 2, textureHandles_.at(i));
+
+		//描画
+		sCommandList->DrawInstanced(UINT(modelData.vertices.size()), 1, 0, 0);
+
+		i++;
+
+	}
 }
 
 
@@ -553,21 +604,38 @@ void Model::CreateMesh(const std::string& directoryPath, const std::string& file
 
 
 	//モデル読み込み
-	modelData = LoadObjFile(directoryPath, filename);
+	modelDatas_ = LoadObjFile(directoryPath, filename);
 
-	vertBuff_ = CreateBufferResource(sDevice, sizeof(VertexData) * modelData.vertices.size());
+	for (ModelData modelData : modelDatas_) {
 
-	//リソースの先頭のアドレスから使う
-	vbView_.BufferLocation = vertBuff_->GetGPUVirtualAddress();
-	//使用するリソースのサイズは頂点3つ分のサイズ
-	vbView_.SizeInBytes = UINT(sizeof(VertexData) * modelData.vertices.size());
-	//1頂点あたりのサイズ
-	vbView_.StrideInBytes = sizeof(VertexData);
+		Microsoft::WRL::ComPtr<ID3D12Resource> vertBuff_ = CreateBufferResource(sDevice, sizeof(VertexData) * modelData.vertices.size());
 
-	//書き込むためのアドレスを取得
-	vertBuff_->Map(0, nullptr, reinterpret_cast<void**>(&vertMap));
-	//頂点データをリソースにコピー
-	std::memcpy(vertMap, modelData.vertices.data(), sizeof(VertexData) * modelData.vertices.size());
+
+		D3D12_VERTEX_BUFFER_VIEW vbView_{};
+
+		//リソースの先頭のアドレスから使う
+		vbView_.BufferLocation = vertBuff_->GetGPUVirtualAddress();
+		//使用するリソースのサイズは頂点3つ分のサイズ
+		vbView_.SizeInBytes = UINT(sizeof(VertexData) * modelData.vertices.size());
+		//1頂点あたりのサイズ
+		vbView_.StrideInBytes = sizeof(VertexData);
+
+		VertexData* vertMap = nullptr;
+
+		//書き込むためのアドレスを取得
+		vertBuff_->Map(0, nullptr, reinterpret_cast<void**>(&vertMap));
+		//頂点データをリソースにコピー
+		std::memcpy(vertMap, modelData.vertices.data(), sizeof(VertexData) * modelData.vertices.size());
+
+
+		vertBuffs_.push_back(vertBuff_);
+
+		vertMaps.push_back(vertMap);
+
+		vbViews_.push_back(vbView_);
+
+
+	}
 
 	//WVP用のリソースを作る。Matrix4x4 1つ分のサイズを用意する
 	transformationMatrixBuff_ = CreateBufferResource(sDevice, sizeof(TransformationMatrix));
@@ -588,8 +656,8 @@ void Model::CreateMesh(const std::string& directoryPath, const std::string& file
 /// <param name="textureHandle"></param>
 void Model::SetTextureHandle(uint32_t textureHandle) {
 
-	textureHandle_ = textureHandle;
-	resourceDesc_ = TextureManager::GetInstance()->GetResourceDesc(textureHandle_);
+	//textureHandle_ = textureHandle;
+	//resourceDesc_ = TextureManager::GetInstance()->GetResourceDesc(textureHandle_);
 
 }
 
