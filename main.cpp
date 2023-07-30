@@ -83,6 +83,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	bool isAliveBall = false;
 	bool isAliveTriangle = false;
 	bool isAliveTriangle2 = false;
+	bool isAliveTeapot = false;
+	bool isAliveBunny = false;
 
 	// スプライト
 
@@ -158,6 +160,50 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	std::unique_ptr<Model> modelTriangle2;
 	modelTriangle2.reset(Model::Create("resources", "Triangle.obj", dxCommon, materialTriangle.get()));
 
+	//ティーポット
+
+	// マテリアル
+	TransformStructure uvTransformTeapot{
+		{1.0f,1.0f,1.0f},
+		{0.0f,0.0f,0.0f},
+		{0.0f,0.0f,0.0f},
+	};
+	std::unique_ptr<Material> materialTeapot;
+	materialTeapot.reset(
+		Material::Create()
+	);
+
+	//Transform変数を作る
+	TransformStructure transformTeapot{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+	std::unique_ptr<Model> modelTeapot;
+	modelTeapot.reset(Model::Create("resources", "teapot.obj", dxCommon, materialTeapot.get()));
+
+	Vector4 colorTeapot = { 1.0f,1.0f,1.0f,1.0f };
+	int enableLightingTeapot = HalfLambert;
+
+
+	//バニー
+
+	// マテリアル
+	TransformStructure uvTransformBunny{
+		{1.0f,1.0f,1.0f},
+		{0.0f,0.0f,0.0f},
+		{0.0f,0.0f,0.0f},
+	};
+	std::unique_ptr<Material> materialBunny;
+	materialBunny.reset(
+		Material::Create()
+	);
+
+	//Transform変数を作る
+	TransformStructure transformBunny{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+	std::unique_ptr<Model> modelBunny;
+	modelBunny.reset(Model::Create("resources", "bunny.obj", dxCommon, materialBunny.get()));
+
+	Vector4 colorBunny = { 1.0f,1.0f,1.0f,1.0f };
+	int enableLightingBunny = HalfLambert;
+
+
 	//平行光源リソースを作る
 	DirectionalLightData directionalLightData;
 	directionalLightData.color = { 1.0f,1.0f,1.0f,1.0f };
@@ -186,6 +232,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::Checkbox("Ball", &isAliveBall);
 		ImGui::Checkbox("Triangle", &isAliveTriangle);
 		ImGui::Checkbox("Triangle2", &isAliveTriangle2);
+		ImGui::Checkbox("Teapot", &isAliveTeapot);
+		ImGui::Checkbox("Bunny", &isAliveBunny);
 		ImGui::End();
 
 		//カメラ
@@ -292,6 +340,48 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		
 		}
 
+		//ティーポット
+		if (isAliveTeapot) {
+
+			ImGui::Begin("ModelTeapot");
+			ImGui::DragFloat3("translate", &transformTeapot.translate.x, 0.1f);
+			ImGui::DragFloat3("scale", &transformTeapot.scale.x, 0.01f, -10.0f, 10.0f);
+			ImGui::DragFloat3("rotate", &transformTeapot.rotate.x, 0.01f, -10.0f, 10.0f);
+			ImGui::ColorEdit3("color", &colorTeapot.x);
+			ImGui::Text("enableLighting");
+			ImGui::RadioButton("None", &enableLightingTeapot, None);
+			ImGui::SameLine();
+			ImGui::RadioButton("Lambert", &enableLightingTeapot, Lambert);
+			ImGui::SameLine();
+			ImGui::RadioButton("HalfLambert", &enableLightingTeapot, HalfLambert);
+			ImGui::End();
+
+			materialTeapot->Update(uvTransformTeapot, colorTeapot, enableLightingTeapot);
+			modelTeapot->Update(transformTeapot, cameraTransform);
+
+		}
+
+		//バニー
+		if (isAliveBunny) {
+
+			ImGui::Begin("ModelBunny");
+			ImGui::DragFloat3("translate", &transformBunny.translate.x, 0.1f);
+			ImGui::DragFloat3("scale", &transformBunny.scale.x, 0.01f, -10.0f, 10.0f);
+			ImGui::DragFloat3("rotate", &transformBunny.rotate.x, 0.01f, -10.0f, 10.0f);
+			ImGui::ColorEdit3("color", &colorBunny.x);
+			ImGui::Text("enableLighting");
+			ImGui::RadioButton("None", &enableLightingBunny, None);
+			ImGui::SameLine();
+			ImGui::RadioButton("Lambert", &enableLightingBunny, Lambert);
+			ImGui::SameLine();
+			ImGui::RadioButton("HalfLambert", &enableLightingBunny, HalfLambert);
+			ImGui::End();
+
+			materialBunny->Update(uvTransformBunny, colorBunny, enableLightingBunny);
+			modelBunny->Update(transformBunny, cameraTransform);
+
+		}
+
 		//光源
 		directionalLight->Update(directionalLightData);
 
@@ -335,6 +425,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 		if (isAliveTriangle2) {
 			modelTriangle2->Draw();
+		}
+		if (isAliveTeapot) {
+			modelTeapot->Draw();
+		}
+		if (isAliveBunny) {
+			modelBunny->Draw();
 		}
 
 		Model::PostDraw();
