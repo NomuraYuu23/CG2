@@ -490,12 +490,12 @@ void Model::Initialize(const std::string& directoryPath, const std::string& file
 
 	assert(sDevice);
 
-	resourceDesc_ = TextureManager::GetInstance()->GetResourceDesc(textureHandle_);
-
 	//メッシュ生成
 	CreateMesh(directoryPath, filename);
 
 	textureHandle_ = TextureManager::Load(modelData.material.textureFilePath, dxCommon);
+
+	resourceDesc_ = TextureManager::GetInstance()->GetResourceDesc(textureHandle_);
 
 	material_ = material;
 

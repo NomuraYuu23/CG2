@@ -24,13 +24,6 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "DirectionalLight.h"
 #include "D3DResourceLeakChecker.h"
 
-enum Mode
-{
-	none = 0,
-	colorChange = 1
-
-};
-
 //Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
