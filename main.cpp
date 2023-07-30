@@ -253,7 +253,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		//カメラ
 		ImGui::Begin("Camera");
-		ImGui::DragFloat3("translate", &cameraTransform.translate.x);
+		ImGui::DragFloat3("translate", &cameraTransform.translate.x, 0.01f);
 		ImGui::DragFloat3("rotate", &cameraTransform.rotate.x, 0.01f, -10.0f, 10.0f);
 		ImGui::End();
 
@@ -261,7 +261,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::Begin("directionalLight");
 		ImGui::ColorEdit3("color", &directionalLightData.color.x);
 		ImGui::DragFloat3("direction", &directionalLightData.direction.x, 0.01f, -1.0f, 1.0f);
-		ImGui::DragFloat("intencity", &directionalLightData.intencity);
+		ImGui::DragFloat("intencity", &directionalLightData.intencity, 0.01f);
 		ImGui::End();
 
 		//スプライト
