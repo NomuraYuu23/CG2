@@ -85,6 +85,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	bool isAliveTriangle2 = false;
 	bool isAliveTeapot = false;
 	bool isAliveBunny = false;
+	bool isAliveMultiMesh = false;
 
 	// スプライト
 
@@ -203,6 +204,26 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	Vector4 colorBunny = { 1.0f,1.0f,1.0f,1.0f };
 	int enableLightingBunny = HalfLambert;
 
+	//マルチメッシュ
+
+	// マテリアル
+	TransformStructure uvTransformMultiMesh{
+		{1.0f,1.0f,1.0f},
+		{0.0f,0.0f,0.0f},
+		{0.0f,0.0f,0.0f},
+	};
+	std::unique_ptr<Material> materialMultiMesh;
+	materialMultiMesh.reset(
+		Material::Create()
+	);
+
+	//Transform変数を作る
+	TransformStructure transformMultiMesh{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
+	std::unique_ptr<Model> modelMultiMesh;
+	modelMultiMesh.reset(Model::Create("resources", "multiMesh.obj", dxCommon, materialMultiMesh.get()));
+
+	Vector4 colorMultiMesh = { 1.0f,1.0f,1.0f,1.0f };
+	int enableLightingMultiMesh = HalfLambert;
 
 	//平行光源リソースを作る
 	DirectionalLightData directionalLightData;
@@ -234,6 +255,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		ImGui::Checkbox("Triangle2", &isAliveTriangle2);
 		ImGui::Checkbox("Teapot", &isAliveTeapot);
 		ImGui::Checkbox("Bunny", &isAliveBunny);
+		ImGui::Checkbox("MultiMesh", &isAliveMultiMesh);
 		ImGui::End();
 
 		//カメラ
@@ -382,6 +404,27 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		}
 
+		//バニー
+		if (isAliveMultiMesh) {
+
+			ImGui::Begin("ModelMultiMesh");
+			ImGui::DragFloat3("translate", &transformMultiMesh.translate.x, 0.1f);
+			ImGui::DragFloat3("scale", &transformMultiMesh.scale.x, 0.01f, -10.0f, 10.0f);
+			ImGui::DragFloat3("rotate", &transformMultiMesh.rotate.x, 0.01f, -10.0f, 10.0f);
+			ImGui::ColorEdit3("color", &colorMultiMesh.x);
+			ImGui::Text("enableLighting");
+			ImGui::RadioButton("None", &enableLightingMultiMesh, None);
+			ImGui::SameLine();
+			ImGui::RadioButton("Lambert", &enableLightingMultiMesh, Lambert);
+			ImGui::SameLine();
+			ImGui::RadioButton("HalfLambert", &enableLightingMultiMesh, HalfLambert);
+			ImGui::End();
+
+			materialMultiMesh->Update(uvTransformMultiMesh, colorMultiMesh, enableLightingMultiMesh);
+			modelMultiMesh->Update(transformMultiMesh, cameraTransform);
+
+		}
+
 		//光源
 		directionalLight->Update(directionalLightData);
 
@@ -431,6 +474,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 		if (isAliveBunny) {
 			modelBunny->Draw();
+		}
+		if (isAliveMultiMesh) {
+			modelMultiMesh->Draw();
 		}
 
 		Model::PostDraw();
