@@ -65,7 +65,7 @@ struct SoundData
 // 音声データ読み込み
 SoundData SoundLoadWave(const char* filename) {
 	
-	HRESULT result;
+	HRESULT result = 0;
 	
 	// ファイルオープン
 	 
@@ -138,6 +138,39 @@ SoundData SoundLoadWave(const char* filename) {
 
 }
 
+// 音声データ解放
+void SoundUnload(SoundData* soundData) {
+	// バッファのメモリを解放
+	delete[] soundData->pBuffer;
+
+	soundData->pBuffer = 0;
+	soundData->bufferSize = 0;
+	soundData->wfex = {};
+
+}
+
+// 音声再生
+void SoundPlayWave(IXAudio2* xAudio2, const SoundData& soundData) {
+
+	HRESULT result;
+
+	// 波形フォーマットを元にSourceVoiceの生成
+	IXAudio2SourceVoice* pSourceVoice = nullptr;
+	result = xAudio2->CreateSourceVoice(&pSourceVoice, &soundData.wfex);
+	assert(SUCCEEDED(result));
+
+	// 再生する波形データの設定
+	XAUDIO2_BUFFER buf{};
+	buf.pAudioData = soundData.pBuffer;
+	buf.AudioBytes = soundData.bufferSize;
+	buf.Flags = XAUDIO2_END_OF_STREAM;
+
+	// 波形データの再生
+	result = pSourceVoice->SubmitSourceBuffer(&buf);
+	result = pSourceVoice->Start();
+
+}
+
 //Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
@@ -194,7 +227,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// マスターボイスを生成
 	result = xAudio2->CreateMasteringVoice(&masterVoice);
 
-
+	// 音声読み込み
+	SoundData soundData1 = SoundLoadWave("Resources/Alarm01.wav");
 
 	//Transform変数を作る(カメラ)
 	TransformStructure cameraTransform{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -10.0f} };
@@ -353,6 +387,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	directionalLightData.intencity = 1.0f;
 	std::unique_ptr<DirectionalLight> directionalLight;
 	directionalLight.reset(DirectionalLight::Create());
+
+	//サウンド
+	SoundPlayWave(xAudio2.Get(), soundData1);
 
 	//ウィンドウののボタンが押されるまでループ
 	while (true) {
@@ -628,6 +665,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//出力ウインドウへの文字出力
 	OutputDebugStringA("Hello,DirectX!\n");
+
+	// サウンド後始末
+
+	// XAudio2解放
+	xAudio2.Reset();
+	// 音声データ解放
+	SoundUnload(&soundData1);
 
 	//色々な解放処理の前に書く
 	ImGui_ImplDX12_Shutdown();
