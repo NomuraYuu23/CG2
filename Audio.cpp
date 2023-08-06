@@ -73,7 +73,7 @@ uint32_t Audio::LoadWave(const std::string& fileName) {
 	// ファイル入力ストリームのインスタンス
 	std::ifstream file;
 	// .wavファイルをバイナリモードで開く
-	file.open(fileName, std::ios_base::binary);
+	file.open(fullpath, std::ios_base::binary);
 	// ファイルオープン失敗を検出する
 	assert(file.is_open());
 
@@ -95,7 +95,7 @@ uint32_t Audio::LoadWave(const std::string& fileName) {
 	FormatChunk format = {};
 	// チャンクヘッダーの確認
 	file.read((char*)&format, sizeof(ChunkHeader));
-	if (strncmp(format.chunk.id, "fmt", 4) != 0) {
+	if (strncmp(format.chunk.id, "fmt", 3) != 0) {
 		assert(0);
 	}
 

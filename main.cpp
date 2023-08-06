@@ -31,6 +31,8 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include <wrl.h>
 #include <cassert>
 
+#include "Audio.h"
+
 // チャンクヘッダ
 struct ChunkHeader
 {
@@ -94,7 +96,7 @@ SoundData SoundLoadWave(const char* filename) {
 	FormatChunk format = {};
 	// チャンクヘッダーの確認
 	file.read((char*)&format, sizeof(ChunkHeader));
-	if (strncmp(format.chunk.id, "fmt", 4) != 0) {
+	if (strncmp(format.chunk.id, "fmt", 3) != 0) {
 		assert(0);
 	}
 
@@ -200,6 +202,11 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// 光源静的初期化
 	DirectionalLight::StaticInitialize(dxCommon->GetDevice());
 
+	//サウンド
+	Audio* audio;
+	audio = Audio::GetInstance();
+	audio->Initialize();
+
 	// リリースチェッカー
 	D3DResourceLeakChecker leakChecker;
 
@@ -229,6 +236,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// 音声読み込み
 	SoundData soundData1 = SoundLoadWave("Resources/Alarm01.wav");
+
+	uint32_t audioHandle = audio->LoadWave("Alarm01.wav");
 
 	//Transform変数を作る(カメラ)
 	TransformStructure cameraTransform{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -10.0f} };
@@ -390,6 +399,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	//サウンド
 	SoundPlayWave(xAudio2.Get(), soundData1);
+
+	audio->PlayWave(audioHandle);
 
 	//ウィンドウののボタンが押されるまでループ
 	while (true) {
@@ -672,6 +683,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	xAudio2.Reset();
 	// 音声データ解放
 	SoundUnload(&soundData1);
+
+	audio->Finalize();
 
 	//色々な解放処理の前に書く
 	ImGui_ImplDX12_Shutdown();
