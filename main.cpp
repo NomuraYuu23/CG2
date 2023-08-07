@@ -13,6 +13,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "TransformStructure.h"
 #include "MaterialData.h"
 #include "DirectionalLightData.h"
+#include "SafeDelete.h"
 
 //クラス化
 #include "WinApp.h"
@@ -28,16 +29,16 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 #include "Audio.h"
 
 //入力デバイス
-#define DIRECTINPUT_VERSION 0x0800 // DirectInputのバージョン指定
-#include <dinput.h>
-#pragma comment(lib, "dinput8.lib")
-#pragma comment(lib, "dxguid.lib")
+#include "Input.h"
 
 //Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	WinApp* win = nullptr;
 	DirectXCommon* dxCommon = nullptr;
+
+	Audio* audio = nullptr;
+	Input* input = nullptr;
 
 	//ゲームウィンドウの作成
 	win = WinApp::GetInstance();
@@ -48,27 +49,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	dxCommon->Initialize(win);
 
 	//入力デバイス
-
-	// DirectInputの初期化
-	IDirectInput8* directInput = nullptr;
-	HRESULT result = DirectInput8Create(
-		win->GetHInstance(), DIRECTINPUT_VERSION, IID_IDirectInput8,
-		(void**)&directInput, nullptr);
-	assert(SUCCEEDED(result));
-
-	// キーボードデバイスの生成
-	IDirectInputDevice8* keyboard = nullptr;
-	result = directInput->CreateDevice(GUID_SysKeyboard, &keyboard, NULL);
-	assert(SUCCEEDED(result));
-
-	// 入力デ―タ形式のセット
-	result = keyboard->SetDataFormat(&c_dfDIKeyboard);//標準形式
-	assert(SUCCEEDED(result));
-
-	// 排他制御レベルのセット
-	result = keyboard->SetCooperativeLevel(
-		win->GetHwnd(), DISCL_FOREGROUND | DISCL_NONEXCLUSIVE | DISCL_NOWINKEY);
-	assert(SUCCEEDED(result));
+	input = new Input();
+	input->Initialize(win->GetHInstance(), win->GetHwnd());
 
 	//テクスチャマネージャー
 	TextureManager::GetInstance()->Initialize(dxCommon->GetDevice());
@@ -86,7 +68,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	DirectionalLight::StaticInitialize(dxCommon->GetDevice());
 
 	//サウンド
-	Audio* audio;
 	audio = Audio::GetInstance();
 	audio->Initialize();
 
@@ -280,16 +261,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		}
 
 		//入力デバイス
+		input->Update();
 
-		// キーボード情報の取得
-		keyboard->Acquire();
-
-		// 全キーの入力状態を取得する
-		BYTE key[256] = {};
-		keyboard->GetDeviceState(sizeof(key), key);
-
-		// 数字の0キーが押されていたら
-		if (key[DIK_0]) {
+		if (input->ReleaseKey(DIK_0)) {
 			OutputDebugStringA("Hit 0\n");
 		}
 
@@ -562,6 +536,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// サウンド後始末
 	audio->Finalize();
+	SafeDelete(input);
 
 	//色々な解放処理の前に書く
 	ImGui_ImplDX12_Shutdown();

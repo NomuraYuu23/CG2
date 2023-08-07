@@ -6,6 +6,7 @@
 
 #define DIRECTINPUT_VERSION 0x0800 // DirectInputのバージョン指定
 #include <dinput.h>
+#pragma comment(lib, "dxguid.lib")
 
 class Input
 {
@@ -29,18 +30,32 @@ public:
 	void KeyboardUpdata();
 
 	/// <summary>
-	/// キーの押下をチェック
+	/// キーを押した状態か
 	/// </summary>
 	/// <param name="keyNumber">キー番号</param>
 	/// <returns>押されているか</returns>
 	bool PushKey(uint8_t keyNumber);
 
 	/// <summary>
-	/// キーのトリガーをチェック
+	/// キーを離した状態か
+	/// </summary>
+	/// <param name="keyNumber">キー番号</param>
+	/// <returns>押されているか</returns>
+	bool NoPushKey(uint8_t keyNumber);
+
+	/// <summary>
+	/// キーを押した瞬間か
 	/// </summary>
 	/// <param name="keyNumber">キー番号</param>
 	/// <returns>トリガーか</returns>
 	bool TriggerKey(uint8_t keyNumber);
+
+	/// <summary>
+	/// キーを離した瞬間か
+	/// </summary>
+	/// <param name="keyNumber">キー番号</param>
+	/// <returns>トリガーか</returns>
+	bool ReleaseKey(uint8_t keyNumber);
 
 	const std::array<BYTE, 256>& GetAllKey() { return key_; }
 
