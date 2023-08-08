@@ -49,7 +49,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	dxCommon->Initialize(win);
 
 	//入力デバイス
-	input = new Input();
+	input = Input::GetInstance();
 	input->Initialize(win->GetHInstance(), win->GetHwnd());
 
 	//テクスチャマネージャー
@@ -262,10 +262,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		//入力デバイス
 		input->Update();
-
-		if (input->ReleaseKey(DIK_0)) {
-			OutputDebugStringA("Hit 0\n");
-		}
 
 		//ゲームの処理 
 		//ImGui
@@ -536,7 +532,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	// サウンド後始末
 	audio->Finalize();
-	SafeDelete(input);
 
 	//色々な解放処理の前に書く
 	ImGui_ImplDX12_Shutdown();

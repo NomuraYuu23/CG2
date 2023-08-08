@@ -8,9 +8,19 @@
 #include <dinput.h>
 #pragma comment(lib, "dxguid.lib")
 
+#include "Vector2.h"
+
 class Input
 {
 public:
+	struct MouseMove {
+		LONG lX;
+		LONG lY;
+		LONG lZ;
+	};
+
+
+	static Input* GetInstance();
 
 	/// <summary>
 	/// 初期化
@@ -27,48 +37,106 @@ public:
 	/// <summary>
 	/// キーボード関連更新
 	/// </summary>
-	void KeyboardUpdata();
+	void KeyboardUpdate();
 
 	/// <summary>
 	/// キーを押した状態か
 	/// </summary>
 	/// <param name="keyNumber">キー番号</param>
-	/// <returns>押されているか</returns>
-	bool PushKey(uint8_t keyNumber);
+	/// <returns>キーを押した状態か</returns>
+	bool PushKey(uint8_t keyNumber) const;
 
 	/// <summary>
 	/// キーを離した状態か
 	/// </summary>
 	/// <param name="keyNumber">キー番号</param>
-	/// <returns>押されているか</returns>
-	bool NoPushKey(uint8_t keyNumber);
+	/// <returns>キーを離した状態か</returns>
+	bool NoPushKey(uint8_t keyNumber) const;
 
 	/// <summary>
 	/// キーを押した瞬間か
 	/// </summary>
 	/// <param name="keyNumber">キー番号</param>
-	/// <returns>トリガーか</returns>
-	bool TriggerKey(uint8_t keyNumber);
+	/// <returns>キーを押した瞬間か</returns>
+	bool TriggerKey(uint8_t keyNumber) const;
 
 	/// <summary>
 	/// キーを離した瞬間か
 	/// </summary>
 	/// <param name="keyNumber">キー番号</param>
-	/// <returns>トリガーか</returns>
-	bool ReleaseKey(uint8_t keyNumber);
+	/// <returns>キーを離した瞬間か</returns>
+	bool ReleaseKey(uint8_t keyNumber) const;
 
-	const std::array<BYTE, 256>& GetAllKey() { return key_; }
+	const std::array<BYTE, 256>& GetAllKey() const { return key_; }
+
+	/// <summary>
+	/// マウス関連更新
+	/// </summary>
+	void MouseUpdate();
+
+	/// <summary>
+	/// マウスボタンを押した状態か
+	/// </summary>
+	/// <param name="buttonNumber">マウスボタン番号(0:左,1:右,2:中,3~7:拡張マウスボタン)</param>
+	/// <returns>マウスボタンを押した状態か</returns>
+	bool PushMouse(uint8_t mouseNumber) const;
+
+	/// <summary>
+	/// マウスボタンを離した状態か
+	/// </summary>
+	/// <param name="buttonNumber">マウスボタン番号(0:左,1:右,2:中,3~7:拡張マウスボタン)</param>
+	/// <returns>マウスボタンを離した状態か</returns>
+	bool NoPushMouse(uint8_t mouseNumber) const;
+
+	/// <summary>
+	/// マウスのトリガーをチェック。押した瞬間だけtrueになる
+	/// </summary>
+	/// <param name="buttonNumber">マウスボタン番号(0:左,1:右,2:中,3~7:拡張マウスボタン)</param>
+	/// <returns>トリガーか</returns>
+	bool TriggerMouse(uint8_t mouseNumber) const;
+
+	/// <summary>
+	/// マウスのトリガーをチェック。押した瞬間だけtrueになる
+	/// </summary>
+	/// <param name="buttonNumber">マウスボタン番号(0:左,1:右,2:中,3~7:拡張マウスボタン)</param>
+	/// <returns>トリガーか</returns>
+	bool ReleaseMouse(uint8_t mouseNumber) const;
+
+	/// <summary>
+	/// マウス移動量を取得
+	/// </summary>
+	/// <returns>マウス移動量</returns>
+	MouseMove GetMouseMove();
+
+	/// <summary>
+	/// マウスの位置を取得する（ウィンドウ座標系）
+	/// </summary>
+	/// <returns>マウスの位置</returns>
+	const Vector2& GetMousePosition(HWND hwnd);
+
+	const DIMOUSESTATE2& GetAllMouse() const { return mouse_; }
 
 private:
 
+	Input() = default;
+	~Input() = default;
+	Input(const Input&) = delete;
+	const Input& operator=(const Input&) = delete;
+
+
 	// DirectInput
-	Microsoft::WRL::ComPtr<IDirectInput8> directInput_;
+	Microsoft::WRL::ComPtr<IDirectInput8> directInput_ = nullptr;
 	
 	//キーボード
-	Microsoft::WRL::ComPtr<IDirectInputDevice8> keyboard_;
+	Microsoft::WRL::ComPtr<IDirectInputDevice8> directKeyboard_;
 	std::array<BYTE, 256> key_;
 	std::array<BYTE, 256> keyPre_;
 
+	// マウス
+	Microsoft::WRL::ComPtr<IDirectInputDevice8> directMouse_ = nullptr;
+	DIMOUSESTATE2 mouse_;
+	DIMOUSESTATE2 mousePre_;
+	Vector2 mousePosition_;
 
 };
 
