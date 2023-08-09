@@ -263,6 +263,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//入力デバイス
 		input->Update();
 
+		if (input->PushKey(DIK_SPACE)) {
+			input->JoystickConnected(win->GetHwnd());
+		}
+		if (input->PushJoystick(0)) {
+			OutputDebugStringA("1");
+		}
+
 		//ゲームの処理 
 		//ImGui
 		ImGui_ImplDX12_NewFrame();

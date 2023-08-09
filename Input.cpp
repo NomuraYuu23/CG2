@@ -48,9 +48,29 @@ void Input::Initialize(HINSTANCE hInstance, HWND hwnd) {
 	assert(SUCCEEDED(result));
 
 	// 排他制御レベルのセット
-	result = directKeyboard_->SetCooperativeLevel(
+	result = directMouse_->SetCooperativeLevel(
 		hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
 	assert(SUCCEEDED(result));
+
+	// ジョイスティックの生成
+	result = directInput_->CreateDevice(GUID_Joystick, &directJoystick_, NULL);
+	if (SUCCEEDED(result)) {
+	
+		// 入力デ―タ形式のセット
+		result = directJoystick_->SetDataFormat(&c_dfDIJoystick2);//標準形式
+		assert(SUCCEEDED(result));
+
+		// 排他制御レベルのセット
+		result = directJoystick_->SetCooperativeLevel(
+			hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
+		assert(SUCCEEDED(result));
+	
+		joystickConnected = true;
+
+	}
+	else {
+		joystickConnected = false;
+	}
 
 }
 
@@ -64,6 +84,11 @@ void Input::Update() {
 
 	//マウス関連更新
 	MouseUpdate();
+
+	//ジョイスティック関連更新
+	if (joystickConnected) {
+		JoystickUpdate();
+	}
 
 }
 
@@ -204,10 +229,10 @@ bool Input::NoPushMouse(uint8_t mouseNumber) const {
 }
 
 /// <summary>
-/// マウスのトリガーをチェック。押した瞬間だけtrueになる
+/// マウスボタンを押した瞬間か
 /// </summary>
 /// <param name="buttonNumber">マウスボタン番号(0:左,1:右,2:中,3~7:拡張マウスボタン)</param>
-/// <returns>トリガーか</returns>
+/// <returns>マウスボタンを押した瞬間か</returns>
 bool Input::TriggerMouse(uint8_t mouseNumber) const {
 
 	//クリックした瞬間
@@ -220,10 +245,10 @@ bool Input::TriggerMouse(uint8_t mouseNumber) const {
 }
 
 /// <summary>
-/// マウスのトリガーをチェック。押した瞬間だけtrueになる
+/// マウスボタンを離した瞬間か
 /// </summary>
 /// <param name="buttonNumber">マウスボタン番号(0:左,1:右,2:中,3~7:拡張マウスボタン)</param>
-/// <returns>トリガーか</returns>
+/// <returns>マウスボタンを離した瞬間か</returns>
 bool Input::ReleaseMouse(uint8_t mouseNumber) const {
 
 	//クリックやめた瞬間
@@ -262,5 +287,165 @@ const Vector2& Input::GetMousePosition(HWND hwnd) {
 	mousePosition_.y = float(mousePosition.y);
 
 	return mousePosition_;
+
+}
+
+/// <summary>
+/// ジョイスティック関連更新
+/// </summary>
+void Input::JoystickUpdate() {
+
+	//ジョイスティック動作開始
+	directJoystick_->Acquire();
+
+	//前回のジョイスティック入力を保存
+	joystickPre_ = joystick_;
+
+	// ジョイスティックの入力状態を取得する
+	directJoystick_->GetDeviceState(sizeof(joystick_), &joystick_);
+
+}
+
+/// <summary>
+/// ジョイスティックボタンを押した状態か
+/// </summary>
+/// <param name="buttonNumber"></param>
+/// <returns>ジョイスティックボタンを押した状態か</returns>
+bool Input::PushJoystick(uint8_t joystickNumber) const {
+	
+	if (!joystickConnected) {
+		return false;
+	}
+	
+	if (joystick_.rgbButtons[joystickNumber]) {
+		return true;
+	}
+
+	return false;
+
+}
+
+/// <summary>
+/// ジョイスティックボタンを離した状態か
+/// </summary>
+/// <param name="buttonNumber"></param>
+/// <returns>ジョイスティックボタンを離した状態か</returns>
+bool Input::NoPushJoystick(uint8_t joystickNumber) const {
+
+	if (!joystickConnected) {
+		return false;
+	}
+
+	if (joystick_.rgbButtons[joystickNumber]) {
+		return false;
+	}
+
+	return true;
+
+}
+
+/// <summary>
+/// ジョイスティックボタンを押した瞬間か
+/// </summary>
+/// <param name="buttonNumber"></param>
+/// <returns>ジョイスティックボタンを押した瞬間か</returns>
+bool Input::TriggerJoystick(uint8_t joystickNumber) const {
+
+	if (!joystickConnected) {
+		return false;
+	}
+
+	if (joystick_.rgbButtons[joystickNumber] && !joystickPre_.rgbButtons[joystickNumber]) {
+		return true;
+	}
+
+	return false;
+
+}
+
+/// <summary>
+/// ジョイスティックボタンを離した瞬間か
+/// </summary>
+/// <param name="buttonNumber"></param>
+/// <returns>ジョイスティックボタンを離した瞬間か</returns>
+bool Input::ReleaseJoystick(uint8_t joystickNumber) const {
+
+	if (!joystickConnected) {
+		return false;
+	}
+
+	if (!joystick_.rgbButtons[joystickNumber] && joystickPre_.rgbButtons[joystickNumber]) {
+		return true;
+	}
+
+	return false;
+
+}
+
+/// <summary>
+/// 左のアナログスティックの状態を取得
+/// </summary>
+/// <returns></returns>
+Vector2 Input::GetLeftAnalogstick() const {
+
+	if (!joystickConnected) {
+		return Vector2(0.0f,0.0f);
+	}
+
+	return Vector2(float(joystick_.lX), float(joystick_.lY));
+
+}
+
+/// <summary>
+/// 左のアナログスティックの状態を取得
+/// </summary>
+/// <returns></returns>
+Vector2 Input::GetRightAnalogstick() const {
+
+	if (!joystickConnected) {
+		return Vector2(0.0f, 0.0f);
+	}
+
+	return Vector2(float(joystick_.lRx), float(joystick_.lRy));
+
+}
+
+/// <summary>
+/// 左右のトリガーの状態を取得()
+/// </summary>
+/// <returns></returns>
+float Input::GetLRTrrigger() const {
+
+	if (!joystickConnected) {
+		return 0.0f;
+	}
+
+	return float(joystick_.lZ); 
+}
+
+/// <summary>
+/// ジョイスティック接続
+/// </summary>
+void Input::JoystickConnected(HWND hwnd) {
+
+	// ジョイスティックの生成
+	HRESULT result = directInput_->CreateDevice(GUID_Joystick, &directJoystick_, NULL);
+	if (SUCCEEDED(result)) {
+
+		// 入力デ―タ形式のセット
+		result = directJoystick_->SetDataFormat(&c_dfDIJoystick2);//標準形式
+		assert(SUCCEEDED(result));
+
+		// 排他制御レベルのセット
+		result = directJoystick_->SetCooperativeLevel(
+			hwnd, DISCL_FOREGROUND | DISCL_NONEXCLUSIVE);
+		assert(SUCCEEDED(result));
+
+		joystickConnected = true;
+
+	}
+	else {
+		joystickConnected = false;
+	}
 
 }
