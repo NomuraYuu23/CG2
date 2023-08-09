@@ -72,6 +72,8 @@ private:
 	static Microsoft::WRL::ComPtr<ID3D12RootSignature> sRootSignature;
 	// パイプラインステートオブジェクト
 	static Microsoft::WRL::ComPtr<ID3D12PipelineState> sPipelineState;
+	//計算
+	static Matrix4x4Calc* matrix4x4Calc;
 
 private:
 
@@ -164,7 +166,6 @@ private:
 
 	// マテリアル
 	Material* material_ = nullptr;
-
 
 };
 

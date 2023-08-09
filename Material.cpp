@@ -358,7 +358,7 @@ void Material::Initialize() {
 	materialMap->color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	//SpriteはLightingしないのでfalseを設定する
 	materialMap->enableLighting = None;	//UVTransfome初期化
-	materialMap->uvTransform = MakeIdentity4x4();
+	materialMap->uvTransform = Matrix4x4Calc::GetInstance()->MakeIdentity4x4();
 
 	uvTransform = {
 		{1.0f,1.0f,1.0f},
@@ -376,7 +376,7 @@ void Material::Update(const TransformStructure& transform, const Vector4& color,
 	uvTransform = transform;
 
 	//UVTransfome用
-	Matrix4x4 uvTransformMatrix = MakeAffineMatrix(uvTransform.scale, uvTransform.rotate, uvTransform.translate);
+	Matrix4x4 uvTransformMatrix = Matrix4x4Calc::GetInstance()->MakeAffineMatrix(uvTransform.scale, uvTransform.rotate, uvTransform.translate);
 	/*MakeScaleMatrix(uvTransform.scale);
 	uvTransformMatrix = Multiply(uvTransformMatrix, MakeRotateZMatrix(uvTransform.rotate.z));
 	uvTransformMatrix = Multiply(uvTransformMatrix, MakeTranslateMatrix(uvTransform.translate));*/

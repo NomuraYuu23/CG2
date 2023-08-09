@@ -20,6 +20,8 @@ ID3D12GraphicsCommandList* Model::sCommandList = nullptr;
 ComPtr<ID3D12RootSignature> Model::sRootSignature;
 // パイプラインステートオブジェクト
 ComPtr<ID3D12PipelineState> Model::sPipelineState;
+//計算
+Matrix4x4Calc* Model::matrix4x4Calc = nullptr;
 
 /// <summary>
 /// 静的初期化
@@ -31,6 +33,9 @@ void Model::StaticInitialize(
 	assert(device);
 
 	sDevice = device;
+
+	matrix4x4Calc = Matrix4x4Calc::GetInstance();
+
 	// グラフィックパイプライン生成
 	InitializeGraphicsPipeline();
 
@@ -510,11 +515,11 @@ void Model::Update(const TransformStructure& transform, const TransformStructure
 
 	//回転
 	//transform.rotate.y = 3.5f;
-	Matrix4x4 worldMatrix = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-	Matrix4x4 cameraMatrix = MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
-	Matrix4x4 viewMatrix = Inverse(cameraMatrix);
-	Matrix4x4 projectionMatrix = MakePerspectiveFovMatrix(0.45f, float(WinApp::kWindowWidth) / float(WinApp::kWindowHeight), 0.1f, 100.0f);
-	Matrix4x4 worldViewProjectionMatrix = Multiply(worldMatrix, Multiply(viewMatrix, projectionMatrix));
+	Matrix4x4 worldMatrix = matrix4x4Calc->MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+	Matrix4x4 cameraMatrix = matrix4x4Calc->MakeAffineMatrix(cameraTransform.scale, cameraTransform.rotate, cameraTransform.translate);
+	Matrix4x4 viewMatrix = matrix4x4Calc->Inverse(cameraMatrix);
+	Matrix4x4 projectionMatrix = matrix4x4Calc->MakePerspectiveFovMatrix(0.45f, float(WinApp::kWindowWidth) / float(WinApp::kWindowHeight), 0.1f, 100.0f);
+	Matrix4x4 worldViewProjectionMatrix = matrix4x4Calc->Multiply(worldMatrix, matrix4x4Calc->Multiply(viewMatrix, projectionMatrix));
 	transformationMatrixMap->WVP = worldViewProjectionMatrix;
 	transformationMatrixMap->World = worldMatrix;
 
@@ -574,8 +579,8 @@ void Model::CreateMesh(const std::string& directoryPath, const std::string& file
 	//書き込むためのアドレスを取得
 	transformationMatrixBuff_->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixMap));
 	//単位行列を書き込んでおく
-	transformationMatrixMap->World = MakeIdentity4x4();
-	transformationMatrixMap->WVP = MakeIdentity4x4();
+	transformationMatrixMap->World = matrix4x4Calc->MakeIdentity4x4();
+	transformationMatrixMap->WVP = matrix4x4Calc->MakeIdentity4x4();
 
 	transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
 

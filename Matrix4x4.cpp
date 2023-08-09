@@ -3,8 +3,17 @@
 #include "Matrix4x4.h"
 #include <cmath>
 
+/// <summary>
+/// シングルトンインスタンスの取得
+/// </summary>
+/// <returns></returns>
+Matrix4x4Calc* Matrix4x4Calc::GetInstance() {
+	static Matrix4x4Calc instance;
+	return &instance;
+}
+
 //加算
-Matrix4x4 Add(const Matrix4x4& m1, const Matrix4x4& m2) {
+Matrix4x4 Matrix4x4Calc::Add(const Matrix4x4& m1, const Matrix4x4& m2) {
 
 	Matrix4x4 result;
 
@@ -19,7 +28,7 @@ Matrix4x4 Add(const Matrix4x4& m1, const Matrix4x4& m2) {
 }
 
 //減算
-Matrix4x4 Subtract(const Matrix4x4& m1, const Matrix4x4& m2) {
+Matrix4x4 Matrix4x4Calc::Subtract(const Matrix4x4& m1, const Matrix4x4& m2) {
 
 	Matrix4x4 result;
 
@@ -34,7 +43,7 @@ Matrix4x4 Subtract(const Matrix4x4& m1, const Matrix4x4& m2) {
 }
 
 //積
-Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2) {
+Matrix4x4 Matrix4x4Calc::Multiply(const Matrix4x4& m1, const Matrix4x4& m2) {
 
 	Matrix4x4 result;
 
@@ -63,7 +72,7 @@ Matrix4x4 Multiply(const Matrix4x4& m1, const Matrix4x4& m2) {
 }
 
 //逆行列
-Matrix4x4 Inverse(const Matrix4x4& m) {
+Matrix4x4 Matrix4x4Calc::Inverse(const Matrix4x4& m) {
 
 	Matrix4x4 result;
 	float tmp =
@@ -256,7 +265,7 @@ Matrix4x4 Inverse(const Matrix4x4& m) {
 }
 
 //転置行列
-Matrix4x4 Transpose(const Matrix4x4& m) {
+Matrix4x4 Matrix4x4Calc::Transpose(const Matrix4x4& m) {
 
 	Matrix4x4 result = m;
 	float tmp = 0.0f;
@@ -274,7 +283,7 @@ Matrix4x4 Transpose(const Matrix4x4& m) {
 }
 
 //単位行列の作成
-Matrix4x4 MakeIdentity4x4() {
+Matrix4x4 Matrix4x4Calc::MakeIdentity4x4() {
 
 	Matrix4x4 result;
 
@@ -295,7 +304,7 @@ Matrix4x4 MakeIdentity4x4() {
 
 
 //平行移動行列
-Matrix4x4 MakeTranslateMatrix(const Vector3& translate) {
+Matrix4x4 Matrix4x4Calc::MakeTranslateMatrix(const Vector3& translate) {
 
 	Matrix4x4 result;
 
@@ -319,7 +328,7 @@ Matrix4x4 MakeTranslateMatrix(const Vector3& translate) {
 
 }
 //拡大縮小行列
-Matrix4x4 MakeScaleMatrix(const Vector3& scale) {
+Matrix4x4 Matrix4x4Calc::MakeScaleMatrix(const Vector3& scale) {
 
 	Matrix4x4 result = {};
 
@@ -333,7 +342,7 @@ Matrix4x4 MakeScaleMatrix(const Vector3& scale) {
 }
 
 //座標変換
-Vector3 Transform(const Vector3& vector, const Matrix4x4& matrix) {
+Vector3 Matrix4x4Calc::Transform(const Vector3& vector, const Matrix4x4& matrix) {
 
 	Vector3 result = {};
 
@@ -350,8 +359,20 @@ Vector3 Transform(const Vector3& vector, const Matrix4x4& matrix) {
 
 }
 
+// 座標変換(平行移動なし)
+Vector3 Matrix4x4Calc::TransformNormal(const Vector3& vector, const Matrix4x4& matrix) {
+
+	Vector3 result = {};
+
+	result.x = vector.x * matrix.m[0][0] + vector.y * matrix.m[1][0] + vector.z * matrix.m[2][0];
+	result.y = vector.x * matrix.m[0][1] + vector.y * matrix.m[1][1] + vector.z * matrix.m[2][1];
+	result.z = vector.x * matrix.m[0][2] + vector.y * matrix.m[1][2] + vector.z * matrix.m[2][2];
+
+	return result;
+}
+
 //X軸回転行列
-Matrix4x4 MakeRotateXMatrix(float radian) {
+Matrix4x4 Matrix4x4Calc::MakeRotateXMatrix(float radian) {
 
 	Matrix4x4 result = {};
 
@@ -367,7 +388,7 @@ Matrix4x4 MakeRotateXMatrix(float radian) {
 }
 
 //Y軸回転行列
-Matrix4x4 MakeRotateYMatrix(float radian) {
+Matrix4x4 Matrix4x4Calc::MakeRotateYMatrix(float radian) {
 
 	Matrix4x4 result = {};
 
@@ -383,7 +404,7 @@ Matrix4x4 MakeRotateYMatrix(float radian) {
 }
 
 //Z軸回転行列
-Matrix4x4 MakeRotateZMatrix(float radian) {
+Matrix4x4 Matrix4x4Calc::MakeRotateZMatrix(float radian) {
 
 	Matrix4x4 result = {};
 
@@ -399,7 +420,7 @@ Matrix4x4 MakeRotateZMatrix(float radian) {
 }
 
 //3次元アフィン変換行列
-Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3& translate) {
+Matrix4x4 Matrix4x4Calc::MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Vector3& translate) {
 
 	Matrix4x4 scaleMatrix = MakeScaleMatrix(scale);
 
@@ -417,7 +438,7 @@ Matrix4x4 MakeAffineMatrix(const Vector3& scale, const Vector3& rotate, const Ve
 }
 
 // 正射影行列
-Matrix4x4 MakeOrthographicMatrix(
+Matrix4x4 Matrix4x4Calc::MakeOrthographicMatrix(
 	float left, float top, float right, float bottom, float nearClip, float farClip) {
 
 	Matrix4x4 result = {};
@@ -435,7 +456,7 @@ Matrix4x4 MakeOrthographicMatrix(
 }
 
 // 透視投影行列
-Matrix4x4 MakePerspectiveFovMatrix(float fovY, float aspectRatio, float nearClip, float farClip) {
+Matrix4x4 Matrix4x4Calc::MakePerspectiveFovMatrix(float fovY, float aspectRatio, float nearClip, float farClip) {
 
 	Matrix4x4 result = {};
 
@@ -450,7 +471,7 @@ Matrix4x4 MakePerspectiveFovMatrix(float fovY, float aspectRatio, float nearClip
 }
 
 // ビューポート変換行列
-Matrix4x4 MakeViewportMatrix(
+Matrix4x4 Matrix4x4Calc::MakeViewportMatrix(
 	float left, float top, float width, float height, float minDepth, float maxDepth) {
 
 	Matrix4x4 result = {};

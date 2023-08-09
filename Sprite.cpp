@@ -16,6 +16,8 @@ ID3D12GraphicsCommandList* Sprite::sCommandList = nullptr;
 ComPtr<ID3D12RootSignature> Sprite::sRootSignature;
 // パイプラインステートオブジェクト
 ComPtr<ID3D12PipelineState> Sprite::sPipelineState;
+//計算
+Matrix4x4Calc* Sprite::matrix4x4Calc = nullptr;
 
 /// <summary>
 /// 静的初期化
@@ -29,6 +31,8 @@ void Sprite::StaticInitialize(
 	sDevice = device;
 
 	sDescriptorHandleIncrementSize = sDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	matrix4x4Calc = Matrix4x4Calc::GetInstance();
 
 	HRESULT hr;
 
@@ -344,8 +348,8 @@ bool Sprite::Initialize() {
 	//書き込むためのアドレスを取得
 	transformationMatrixBuff_->Map(0, nullptr, reinterpret_cast<void**>(&transformationMatrixMap));
 	//単位行列を書き込んでおく
-	transformationMatrixMap->World = MakeIdentity4x4();
-	transformationMatrixMap->WVP = MakeIdentity4x4();
+	transformationMatrixMap->World = matrix4x4Calc->MakeIdentity4x4();
+	transformationMatrixMap->WVP = matrix4x4Calc->MakeIdentity4x4();
 
 	//CPUで動かす用のTransformを作る
 	transform_ = { {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f} };
@@ -362,10 +366,10 @@ void Sprite::Update(const TransformStructure& transform) {
 	transform_ = transform;
 
 	//Sprite用のWorldViewProjectionMatrixを作る
-	Matrix4x4 WorldMatrixSprite = MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
-	Matrix4x4 viewMatrixSprite = MakeIdentity4x4();
-	Matrix4x4 projectionMatrixSprite = MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kWindowWidth), float(WinApp::kWindowHeight), 0.0f, 100.0f);
-	Matrix4x4 worldViewProjectionMatrixSprite = Multiply(WorldMatrixSprite, Multiply(viewMatrixSprite, projectionMatrixSprite));
+	Matrix4x4 WorldMatrixSprite = matrix4x4Calc->MakeAffineMatrix(transform_.scale, transform_.rotate, transform_.translate);
+	Matrix4x4 viewMatrixSprite = matrix4x4Calc->MakeIdentity4x4();
+	Matrix4x4 projectionMatrixSprite = matrix4x4Calc->MakeOrthographicMatrix(0.0f, 0.0f, float(WinApp::kWindowWidth), float(WinApp::kWindowHeight), 0.0f, 100.0f);
+	Matrix4x4 worldViewProjectionMatrixSprite = matrix4x4Calc->Multiply(WorldMatrixSprite, matrix4x4Calc->Multiply(viewMatrixSprite, projectionMatrixSprite));
 	transformationMatrixMap->WVP = worldViewProjectionMatrixSprite;
 	transformationMatrixMap->World = WorldMatrixSprite;
 
