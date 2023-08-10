@@ -31,6 +31,9 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 //入力デバイス
 #include "Input.h"
 
+//デバッグカメラ
+#include "DebugCamera.h"
+
 //Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
@@ -92,8 +95,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 	uint32_t audioHandle = audio->LoadWave("Alarm01.wav");
 
+	std::unique_ptr<DebugCamera> debugCamera = std::make_unique<DebugCamera>();
+	debugCamera->Initialize();
+
 	//Transform変数を作る(カメラ)
 	TransformStructure cameraTransform{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -10.0f} };
+	TransformStructure releaseCameraTransform{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -10.0f} };
 
 	//生存フラグ
 	bool isAliveSprite = true;
@@ -263,6 +270,9 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//入力デバイス
 		input->Update();
 
+		//デバッグカメラ
+		cameraTransform = debugCamera->Update(releaseCameraTransform);
+
 		if (input->PushKey(DIK_SPACE)) {
 			input->JoystickConnected(win->GetHwnd());
 		}
@@ -289,8 +299,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		//カメラ
 		ImGui::Begin("Camera");
-		ImGui::DragFloat3("translate", &cameraTransform.translate.x, 0.01f);
-		ImGui::DragFloat3("rotate", &cameraTransform.rotate.x, 0.01f, -10.0f, 10.0f);
+		ImGui::DragFloat3("translate", &releaseCameraTransform.translate.x, 0.01f);
+		ImGui::DragFloat3("rotate", &releaseCameraTransform.rotate.x, 0.01f, -10.0f, 10.0f);
 		ImGui::End();
 
 		//光源
