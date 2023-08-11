@@ -33,6 +33,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hwnd, UINT msg
 
 //デバッグカメラ
 #include "DebugCamera.h"
+#include "GameScene.h"
 
 //Windowsアプリでのエントリーポイント(main関数)
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
@@ -77,6 +78,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	// リリースチェッカー
 	D3DResourceLeakChecker leakChecker;
 
+	//ゲームシーン
+	std::unique_ptr<GameScene> gameScene = std::make_unique<GameScene>();
+	gameScene->Initialize();
+
 	//ImGuiの初期化。
 
 	IMGUI_CHECKVERSION();
@@ -90,14 +95,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		TextureManager::StaticGetCPUDescriptorHandle(),
 		TextureManager::StaticGetGPUDescriptorHandle());
 
-	//デバッグカメラ
-	std::unique_ptr<DebugCamera> debugCamera = std::make_unique<DebugCamera>();
-	debugCamera->Initialize();
-
-	//Transform変数を作る(カメラ)
-	TransformStructure cameraTransform{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -10.0f} };
-	TransformStructure releaseCameraTransform{ {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, -10.0f} };
-
 	//ウィンドウののボタンが押されるまでループ
 	while (true) {
 		//Windowにメッセージが来てたら最優先で処理させる
@@ -107,10 +104,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 
 		//入力デバイス
 		input->Update();
-
-		//デバッグカメラ
-		cameraTransform = debugCamera->Update(releaseCameraTransform);
-
 		if (input->PushKey(DIK_SPACE)) {
 			input->JoystickConnected(win->GetHwnd());
 		}
@@ -128,40 +121,15 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 		//ImGuiの内部コマンドを生成する
 		ImGui::Render();
 
+		// ゲームシーン更新
+		gameScene->Update();
+
+
 		//描画前処理
 		dxCommon->PreDraw();
 
-#pragma region 背景スプライト描画
-		// 背景スプライト描画前処理
-		Sprite::PreDraw(dxCommon->GetCommadList());
-
-		//背景スプライト描画
-
-		// スプライト描画後処理
-		Sprite::PostDraw();
-		// 深度バッファクリア
-		dxCommon->ClearDepthBuffer();
-
-
-#pragma endregion
-
-		Model::PreDraw(dxCommon->GetCommadList());
-
-		//モデル
-
-		Model::PostDraw();
-
-#pragma region 前景スプライト描画
-		// 背景スプライト描画前処理
-		Sprite::PreDraw(dxCommon->GetCommadList());
-
-		//背景スプライト描画
-
-		// スプライト描画後処理
-		Sprite::PostDraw();
-
-#pragma endregion
-
+		//ゲームシーン描画処理
+		gameScene->Draw();
 
 		// シェーダーリソースビューをセット
 		TextureManager::GetInstance()->SetGraphicsRootDescriptorTable(dxCommon->GetCommadList(), 2, 0);

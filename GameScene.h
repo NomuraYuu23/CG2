@@ -5,6 +5,7 @@
 #include "DebugCamera.h"//デバッグカメラ
 
 #include "WorldTransform.h"
+#include "ViewProjection.h"
 
 class GameScene
 {
@@ -41,6 +42,8 @@ private:
 	DirectXCommon* dxCommon_ = nullptr;
 	Input* input_ = nullptr;
 	Audio* audio_ = nullptr;
+
+	ViewProjection viewProjection;
 
 	//デバッグカメラ
 	std::unique_ptr<DebugCamera> debugCamera_ = nullptr;
