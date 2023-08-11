@@ -22,6 +22,7 @@
 #include "Material.h"
 
 #include "WorldTransform.h"
+#include "ViewProjection.h"
 
 class Model
 {
@@ -116,7 +117,7 @@ public:
 	/// <summary>
 	/// 更新
 	/// </summary>
-	void Update(const WorldTransform& transform, const TransformStructure& cameraTransform);
+	void Update(const WorldTransform& transform, const ViewProjection& viewProjection);
 
 	/// <summary>
 	/// 描画
