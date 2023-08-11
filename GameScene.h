@@ -4,6 +4,8 @@
 #include "Input.h"//入力デバイス
 #include "DebugCamera.h"//デバッグカメラ
 
+#include "WorldTransform.h"
+
 class GameScene
 {
 

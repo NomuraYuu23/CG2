@@ -21,6 +21,8 @@
 
 #include "Material.h"
 
+#include "WorldTransform.h"
+
 class Model
 {
 
@@ -114,7 +116,7 @@ public:
 	/// <summary>
 	/// 更新
 	/// </summary>
-	void Update(const TransformStructure& transform, const TransformStructure& cameraTransform);
+	void Update(const WorldTransform& transform, const TransformStructure& cameraTransform);
 
 	/// <summary>
 	/// 描画
@@ -152,9 +154,6 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> transformationMatrixBuff_;
 	//データを書き込む
 	TransformationMatrix* transformationMatrixMap = nullptr;
-
-	//CPUで動かす用のTransformを作る
-	TransformStructure transform_;
 
 	//モデル読み込み
 	Model::ModelData modelData;
